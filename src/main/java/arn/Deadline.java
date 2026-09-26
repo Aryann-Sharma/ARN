@@ -1,7 +1,7 @@
 package arn;
-import java.time.DateTimeException;
-import java.time.LocalDateTime;
+
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
@@ -10,9 +10,9 @@ import java.time.format.DateTimeParseException;
  * a description and a due date.
  */
 
-public class Deadline extends Task{
-    protected LocalDateTime date;
-    protected boolean hasTime = true;
+public final class Deadline extends Task {
+    private LocalDateTime date;
+    private boolean hasTime = true;
 
     /**
      * Constructs a Deadline with the given description and due date.
@@ -35,7 +35,7 @@ public class Deadline extends Task{
                 this.date = d.atStartOfDay();
                 this.hasTime = false;
             } catch (DateTimeParseException e2) {
-                throw new ArnException("Invalid date format. Use yyyy-mm-dd or yyyy-mm-dd hhmm.");
+                throw new ArnException("Invalid date format. Use YYYY-MM-DD or YYYY-MM-DD HHMM.");
             }
         }
     }
@@ -74,7 +74,7 @@ public class Deadline extends Task{
 
     @Override
     public String toString() {
-        return "[" + this.getType() + "][" + this.getStatusIcon() + "] " + description + " (by " +
+        return "[" + this.getType() + "][" + this.getStatusIcon() + "] " + getDescription() + " (by " +
                 this.formatDate(true) + ")";
     }
 }

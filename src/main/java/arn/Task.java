@@ -1,19 +1,23 @@
 package arn;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 public class Task {
-    protected String description;
-    protected boolean isDone;
+    private final String description;
+    private boolean isDone;
 
-    public Task() {
-        this.description = "";
+    public Task(String description) {
+        this.description = Objects.requireNonNull(description, "description");
         this.isDone = false;
     }
 
-    public Task(String description) {
-        this.description = description;
-        this.isDone = false;
+    public String getDescription() {
+        return description;
+    }
+
+    public boolean isDone() {
+        return isDone;
     }
 
     public String getStatusIcon() {
@@ -36,5 +40,4 @@ public class Task {
     public String toString() {
         return "[" + this.getStatusIcon() + "] " + this.description;
     }
-
 }

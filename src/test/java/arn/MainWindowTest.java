@@ -87,6 +87,29 @@ public class MainWindowTest {
         });
     }
 
+    @Test
+    public void saveFailureIsShownAndUnsavedChangeIsRolledBack(@TempDir Path tempDir) throws Exception {
+        runOnFxThread(() -> {
+            Arn arn = createTestArn(tempDir);
+            arn.taskFileHandler = new TaskFileHandler(tempDir);
+
+            FXMLLoader loader = new FXMLLoader(Arn.class.getResource("/view/MainWindow.fxml"));
+            AnchorPane root = loader.load();
+            MainWindow controller = loader.getController();
+            controller.setArn(arn);
+
+            controller.userInput.setText("todo should not be retained");
+            controller.sendButton.fire();
+
+            assertEquals(0, arn.getTaskCount());
+            assertEquals("0 tasks saved locally", controller.taskCountLabel.getText());
+            DialogBox errorMessage = (DialogBox) controller.dialogContainer.getChildren().get(2);
+            assertTrue(errorMessage.getStyleClass().contains("error-dialog"));
+            assertEquals("Error: Could not save tasks.", errorMessage.dialog.getText());
+            return null;
+        });
+    }
+
     private Arn createTestArn(Path tempDir) {
         Arn arn = new Arn();
         arn.taskFileHandler = new TaskFileHandler(tempDir.resolve("arn.txt").toString());

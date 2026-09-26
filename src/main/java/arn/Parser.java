@@ -1,65 +1,69 @@
 package arn;
 
-import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Parses and interprets user commands,
  * then updates the task list and UI accordingly.
  */
-public class Parser {
-    protected TaskList taskList;
-    protected Ui ui;
+public final class Parser {
+    private final TaskList taskList;
+    private final Ui ui;
 
-    public Parser (TaskList taskList, Ui ui) {
+    public Parser(TaskList taskList, Ui ui) {
+        if (taskList == null || ui == null) {
+            throw new IllegalArgumentException("Task list and UI are required.");
+        }
         this.taskList = taskList;
         this.ui = ui;
     }
 
     public void parse(String input) throws ArnException {
-        assert input != null : "input must not be null";
-        if (input.equals("bye")) {
+        if (input == null || input.isBlank()) {
+            throw new ArnException("Enter a command to continue.");
+        }
+
+        String command = input.trim();
+        if (command.equals("bye")) {
             ui.displayBye();
-        } else if (input.equals("list")) {
+        } else if (command.equals("list")) {
             list();
-        } else if (input.startsWith("mark ")) {
-            mark(input);
-        } else if (input.startsWith("unmark ")) {
-            unMark(input);
-        } else if (input.startsWith("todo ")) {
-            todo(input);
-        } else if (input.startsWith("deadline ")) {
-            deadline(input);
-        } else if (input.startsWith("event ")) {
-            event(input);
-        } else if (input.startsWith("delete ")) {
-            delete(input);
-        } else if (input.startsWith("find ")) {
-            find(input);
-        } else if (input.equals("sort")) {
+        } else if (isCommand(command, "mark")) {
+            mark(command);
+        } else if (isCommand(command, "unmark")) {
+            unmark(command);
+        } else if (isCommand(command, "todo")) {
+            todo(command);
+        } else if (isCommand(command, "deadline")) {
+            deadline(command);
+        } else if (isCommand(command, "event")) {
+            event(command);
+        } else if (isCommand(command, "delete")) {
+            delete(command);
+        } else if (isCommand(command, "find")) {
+            find(command);
+        } else if (command.equals("sort")) {
             sortByDate();
         } else {
             throw new ArnException("Sorry, not a valid command.");
         }
     }
 
-    public void list() {
+    private void list() {
         if (taskList.size() == 0) {
             ui.displayMsg("Your task list is empty. Add a todo, deadline, or event to get started.");
             return;
         }
         int index = 1;
-        for (Task task : taskList.get()) {
-            if (task == null) {
-                break;
-            }
+        for (Task task : taskList.getTasks()) {
             ui.displayMsg(index + ". " + task);
             index++;
         }
     }
 
-    public void mark(String input) throws ArnException {
-        if (input.trim().equals("mark")) {
-            throw new ArnException("No task number provided to mark");
+    private void mark(String input) throws ArnException {
+        if (input.equals("mark")) {
+            throw new ArnException("No task number provided to mark.");
         }
         int i = parseTaskIndex(input, "mark");
         taskList.get(i).markAsDone();
@@ -67,9 +71,9 @@ public class Parser {
         ui.displayMsg(taskList.get(i).toString());
     }
 
-    public void unMark(String input) throws ArnException {
-        if (input.trim().equals("unmark")) {
-            throw new ArnException("No task number provided to mark");
+    private void unmark(String input) throws ArnException {
+        if (input.equals("unmark")) {
+            throw new ArnException("No task number provided to unmark.");
         }
         int i = parseTaskIndex(input, "unmark");
         taskList.get(i).markAsNotDone();
@@ -77,23 +81,21 @@ public class Parser {
         ui.displayMsg(taskList.get(i).toString());
     }
 
-    public void todo(String input) throws ArnException {
-        if (input.trim().equals("todo")) {
+    private void todo(String input) throws ArnException {
+        if (input.equals("todo")) {
             throw new ArnException("Empty task description.");
         }
-        int i = input.indexOf("todo ");
-        String description = input.substring(i + 5);
+        String description = input.substring("todo".length()).trim();
         taskList.add(new Todo(description));
         ui.displayMsg("added: " + taskList.get(taskList.size() - 1));
     }
 
-    public void deadline(String input) throws ArnException {
-        int i = input.indexOf("deadline ");
+    private void deadline(String input) throws ArnException {
         int j = input.indexOf("/by");
         if (j == -1) {
             throw new ArnException("Deadline task must have a '/by' clause.");
         }
-        String description = input.substring(i + 9, j).trim();
+        String description = input.substring("deadline".length(), j).trim();
         if (description.isEmpty()) {
             throw new ArnException("Empty task description.");
         }
@@ -101,25 +103,20 @@ public class Parser {
         if (date.isEmpty()) {
             throw new ArnException("Empty date.");
         }
-        try {
-            Deadline d = new Deadline(description, date);
-            taskList.add(d);
-            ui.displayMsg("added: " + taskList.get(taskList.size() - 1));
-        } catch (ArnException e) {
-            throw e;
-        }
+        Deadline deadline = new Deadline(description, date);
+        taskList.add(deadline);
+        ui.displayMsg("added: " + taskList.get(taskList.size() - 1));
     }
 
-    public void event(String input) throws ArnException {
-        int i = input.indexOf("event ");
+    private void event(String input) throws ArnException {
         int j = input.indexOf("/from");
-        int k = input.indexOf("/to");
+        int k = j == -1 ? -1 : input.indexOf("/to", j + "/from".length());
         if (j == -1 || k == -1) {
             throw new ArnException("Event task must have both '/from' and '/to' clauses.");
         }
-        String description = input.substring(i + 6, j).trim();
+        String description = input.substring("event".length(), j).trim();
         if (description.isEmpty()) {
-            throw new ArnException("Empty task description");
+            throw new ArnException("Empty task description.");
         }
         String startDate = input.substring(j + 5, k).trim();
         String endDate = input.substring(k + 3).trim();
@@ -129,30 +126,26 @@ public class Parser {
         if (endDate.isEmpty()) {
             throw new ArnException("Empty end date.");
         }
-        try {
-            Event e = new Event(description, startDate, endDate);
-            taskList.add(e);
-            ui.displayMsg("added: " + taskList.get(taskList.size() - 1));
-        } catch (ArnException e) {
-            throw e;
-        }
+        Event event = new Event(description, startDate, endDate);
+        taskList.add(event);
+        ui.displayMsg("added: " + taskList.get(taskList.size() - 1));
     }
 
-    public void delete(String input) throws ArnException {
-        if (input.trim().equals("delete")) {
-            throw new ArnException("Task number to delete not provided");
+    private void delete(String input) throws ArnException {
+        if (input.equals("delete")) {
+            throw new ArnException("No task number provided to delete.");
         }
         int i = parseTaskIndex(input, "delete");
         Task t = taskList.remove(i);
         ui.displayMsg("Task removed: " + t.toString());
     }
 
-    public void find(String input) throws ArnException {
+    private void find(String input) throws ArnException {
         String keyword = input.substring(4).trim();
         if (keyword.isEmpty()) {
             throw new ArnException("Empty keyword.");
         }
-        ArrayList<Task> matchList = taskList.find(keyword);
+        List<Task> matchList = taskList.find(keyword);
         if (matchList.isEmpty()) {
             ui.displayMsg("Sorry, no matching tasks found.");
         } else {
@@ -165,10 +158,10 @@ public class Parser {
         }
     }
 
-    public void sortByDate() {
-        ArrayList<Task> sortList = taskList.sortByDate();
+    private void sortByDate() {
+        List<Task> sortList = taskList.sortByDate();
         if (sortList.isEmpty()) {
-            ui.displayMsg("No deadlines or events in the list");
+            ui.displayMsg("No deadlines or events in the list.");
         } else {
             int index = 1;
             for (Task task : sortList) {
@@ -176,6 +169,10 @@ public class Parser {
                 index++;
             }
         }
+    }
+
+    private boolean isCommand(String input, String command) {
+        return input.equals(command) || input.startsWith(command + " ");
     }
 
     private int parseTaskIndex(String input, String command) throws ArnException {

@@ -8,22 +8,23 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.VBox;
+
 public class MainWindow extends AnchorPane {
     @FXML
-    protected ScrollPane scrollPane;
+    ScrollPane scrollPane;
     @FXML
-    protected VBox dialogContainer;
+    VBox dialogContainer;
     @FXML
-    protected TextField userInput;
+    TextField userInput;
     @FXML
-    protected Button sendButton;
+    Button sendButton;
     @FXML
-    protected Label taskCountLabel;
+    Label taskCountLabel;
 
-    protected Arn arn;
+    private Arn arn;
 
-    protected Image arnImage = new Image(this.getClass().getResourceAsStream("/images/ArnLogo.png"));
-    protected Image userImage = new Image(this.getClass().getResourceAsStream("/images/ArnUser.png"));
+    private final Image arnImage = new Image(this.getClass().getResourceAsStream("/images/ArnLogo.png"));
+    private final Image userImage = new Image(this.getClass().getResourceAsStream("/images/ArnUser.png"));
 
     @FXML
     public void initialize() {

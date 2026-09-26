@@ -1,15 +1,17 @@
 package arn;
+
 import java.util.Scanner;
+
 public class Ui {
-    protected Scanner sc;
+    private final Scanner scanner;
 
     public Ui() {
-        sc = new Scanner(System.in);
+        scanner = new Scanner(System.in);
     }
 
     public String readCommand() {
         System.out.print("-> ");
-        return sc.nextLine();
+        return scanner.nextLine();
     }
 
     public void displayGreet() {
@@ -27,6 +29,6 @@ public class Ui {
     }
 
     public void close() {
-        sc.close();
+        scanner.close();
     }
 }

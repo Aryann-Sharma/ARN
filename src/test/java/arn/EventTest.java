@@ -1,9 +1,12 @@
 package arn;
 
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-//Used ChatGPT to generate JUnit test cases
+import org.junit.jupiter.api.Test;
+
 public class EventTest {
     @Test
     public void testValidEventWithDateTime() throws ArnException {
