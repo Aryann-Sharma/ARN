@@ -6,6 +6,18 @@
 
 Arn is a chatbot that takes care of your scheduling needs, whether that be your friend's birthday party, or your exam date! 
 
+## Using the interface
+
+Type a command in the input area and press **Enter** or select **Send**. The refreshed interface also includes:
+
+- **Show tasks** to run `list`
+- **Upcoming** to run `sort`
+- **Examples** to display command suggestions
+- A live count of locally saved tasks
+- Distinct visual feedback for successful commands and errors
+
+Dates use `yyyy-mm-dd` or `yyyy-mm-dd hhmm` in 24-hour time.
+
 ## List
 
 list
