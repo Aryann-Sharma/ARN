@@ -4,7 +4,7 @@
 ![Arn logo](../src/main/resources/images/ArnLogo.png)
 
 
-Arn is a chatbot that takes care of your scheduling needs, whether that be your friend's birthday party, or your exam date! 
+Arn is a task management chatbot for capturing todos, tracking deadlines, and planning events from a focused desktop interface.
 
 ## Using the interface
 
@@ -16,7 +16,7 @@ Type a command in the input area and press **Enter** or select **Send**. The ref
 - A live count of locally saved tasks
 - Distinct visual feedback for successful commands and errors
 
-Commands are case-sensitive and should be entered in lowercase. Dates use `yyyy-mm-dd` or `yyyy-mm-dd hhmm` in 24-hour time. For events, the start and end must both include a time or both omit it, and the end cannot be earlier than the start.
+Commands are case-sensitive and should be entered in lowercase. Dates use `YYYY-MM-DD` or `YYYY-MM-DD HHMM` in 24-hour time. For events, the start and end must both include a time or both omit it, and the end cannot be earlier than the start.
 
 ## List
 
@@ -36,7 +36,7 @@ Example: list
 
 todo TASK
 
-Adds a task of type ToDo to list (i.e. no associated dates)
+Adds a todo without an associated date.
 
 Example: todo gym
 
@@ -49,7 +49,7 @@ added: [T][ ] gym
 deadline TASK /by DATE
 
 Adds a task of type Deadline to list (i.e. task with a deadline).
-DATE is in the format yyyy-mm-dd or yyyy-mm-dd hhmm. 
+`DATE` uses `YYYY-MM-DD` or `YYYY-MM-DD HHMM`.
 
 Example: deadline insurance /by 2025-06-03
 
@@ -60,7 +60,7 @@ added: [D][ ] insurance (by Jun 3 2025)
 Example: deadline assignment /by 2025-07-03 2359
 
 ```text
-added: [D][ ] assignment (by Jul 3 2025, 11:59pm)
+added: [D][ ] assignment (by Jul 3 2025, 11:59PM)
 ```
 
 ## Adding Event tasks
@@ -68,7 +68,7 @@ added: [D][ ] assignment (by Jul 3 2025, 11:59pm)
 event TASK /from START_DATE /to END_DATE
 
 Adds a task of type Event to list (i.e. task with start and end dates).
-START_DATE and END_DATE use the format yyyy-mm-dd or yyyy-mm-dd hhmm. Both values must use the same format.
+`START_DATE` and `END_DATE` use `YYYY-MM-DD` or `YYYY-MM-DD HHMM`. Both values must use the same format.
 
 Example: event party /from 2025-05-02 /to 2025-05-03
 
@@ -79,7 +79,7 @@ added: [E][ ] party (from May 2 2025 to May 3 2025)
 Example: event meeting /from 2025-05-09 1600 /to 2025-05-09 1800
 
 ```text
-added: [E][ ] meeting (from May 9 2025, 4:00pm to May 9 2025, 6:00pm)
+added: [E][ ] meeting (from May 9 2025, 4:00PM to May 9 2025, 6:00PM)
 ```
 
 ## Marking tasks
@@ -133,7 +133,7 @@ Example: find meeting
 
 ```text
 Here are the matching tasks in your list:
-1. [E][ ] meeting (from May 9 2025, 4:00pm to May 9 2025, 6:00pm)
+1. [E][ ] meeting (from May 9 2025, 4:00PM to May 9 2025, 6:00PM)
 ```
 
 ## Sorting tasks by dates
@@ -169,7 +169,9 @@ In the JavaFX application, close the window when you are finished.
 
 ## Saving data
 
-Arn saves valid commands to `data/arn.txt`, relative to the directory from which the application is launched. The file is created automatically if it does not exist.
+Arn saves valid commands to `data/arn.txt`, relative to the directory from which the application is launched. The file is created automatically if it does not exist. Saves use UTF-8 and replace the data file only after a complete temporary copy has been written. Existing save files from earlier versions remain supported.
+
+If Arn cannot load or save the file, it shows an error instead of silently losing the failure. A command that cannot be saved is rolled back in the current session.
 
 
 

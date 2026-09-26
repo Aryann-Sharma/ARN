@@ -1,8 +1,12 @@
 # Arn
 
+[![Build](https://github.com/Aryann-Sharma/ARN/actions/workflows/ci.yml/badge.svg)](https://github.com/Aryann-Sharma/ARN/actions/workflows/ci.yml)
+
 Arn is a lightweight desktop task assistant built with Java 17 and JavaFX. It uses a conversational command interface to capture todos, track deadlines, schedule events, and search or sort saved tasks.
 
 Tasks are stored locally, so they remain available between sessions without requiring an account or an internet connection at runtime.
+
+![Arn desktop interface](docs/Ui.png)
 
 ## Features
 
@@ -65,6 +69,7 @@ src/main/java/arn/
 ├── Parser.java           Command routing and validation
 ├── TaskList.java         Task collection operations
 ├── TaskFileHandler.java  Local persistence
+├── StorageException.java Storage failure reporting
 └── Task.java             Base model for Todo, Deadline, and Event
 
 src/main/resources/
@@ -89,7 +94,7 @@ On macOS or Linux:
 ./gradlew clean test
 ```
 
-The suite covers task models, parsing, collection behavior, and a JavaFX smoke test that loads the real FXML and CSS and exercises the main input flow.
+The suite covers task models, parsing, collection behavior, persistence compatibility, error recovery, and JavaFX interactions using the real FXML and CSS.
 
 ## Build a runnable JAR
 
@@ -107,8 +112,16 @@ java -jar build/libs/Arn.jar
 
 ## Data and privacy
 
-Arn writes task data to `data/arn.txt`, relative to the directory from which the application is launched. Valid commands are saved immediately. This runtime file is excluded from Git. Avoid storing sensitive information in task descriptions if the project directory is shared or backed up to a public location.
+Arn writes task data to `data/arn.txt`, relative to the directory from which the application is launched. Valid commands are saved immediately. Writes use a temporary file and atomic replacement where the operating system supports it, reducing the chance of a partially written save file. The current file format includes a version header while remaining compatible with existing unversioned files.
 
-## Artwork
+The runtime data directory is excluded from Git. Avoid storing sensitive information in task descriptions if the project directory is shared or backed up to a public location.
 
-The Arn logo and user avatar were generated with ChatGPT.
+## Engineering practices
+
+- Automated builds and tests run on every pull request and push to `master`.
+- Java 17 is enforced through the Gradle toolchain, with compiler lint checks enabled.
+- Storage failures are reported without discarding the last successfully saved task state.
+- UTF-8 encoding and repository-wide line-ending rules keep builds consistent across platforms.
+- The runnable JAR is produced and retained as a build artifact in continuous integration.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for local setup and pull request guidelines.
