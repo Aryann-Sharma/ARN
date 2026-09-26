@@ -1,8 +1,8 @@
 package arn;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,12 +20,14 @@ import javafx.stage.Stage;
  */
 public class Arn extends Application {
     private static final Logger LOGGER = Logger.getLogger(Arn.class.getName());
+    private static final int UNDO_LIMIT = 100;
 
     TaskFileHandler taskFileHandler;
     TaskList taskList;
     Gui gui;
     Parser parser;
     private boolean exitRequested;
+    private final Deque<TaskSnapshot> undoHistory = new ArrayDeque<>();
 
     public static void main(String[] args) {
         int exitCode = runConsole(new Ui());
@@ -57,6 +59,7 @@ public class Arn extends Application {
 
     void initialize(TaskFileHandler storage) throws StorageException {
         exitRequested = false;
+        undoHistory.clear();
         taskFileHandler = storage;
         taskList = new TaskList(storage.readTasks());
         gui = new Gui();
@@ -96,17 +99,29 @@ public class Arn extends Application {
     public String getResponse(String input) {
         exitRequested = false;
         gui.clearResponses();
-        List<Task> previousTasks = taskList.getTasks();
-        List<Boolean> previousStatuses = getTaskStatuses(previousTasks);
+        TaskSnapshot previousTasks = new TaskSnapshot(taskList);
         try {
             parser.parse(input);
-            if (hasChanges(previousTasks, previousStatuses)) {
+            if (gui.isUndoRequested()) {
+                if (undoHistory.isEmpty()) {
+                    throw new ArnException("Nothing to undo. Undo is available after a saved change in this session.");
+                }
+                taskList = undoHistory.peek().restore();
                 taskFileHandler.writeTasks(taskList.getTasks());
+                undoHistory.pop();
+                parser = new Parser(taskList, gui);
+                gui.displayMsg("Undid the last change. Use 'list' to see your tasks.");
+            } else if (!previousTasks.matches(taskList)) {
+                taskFileHandler.writeTasks(taskList.getTasks());
+                undoHistory.push(previousTasks);
+                if (undoHistory.size() > UNDO_LIMIT) {
+                    undoHistory.removeLast();
+                }
             }
             exitRequested = gui.isExitRequested();
             return gui.getResponses();
         } catch (ArnException | StorageException e) {
-            taskList = restoreTasks(previousTasks, previousStatuses);
+            taskList = previousTasks.restore();
             parser = new Parser(taskList, gui);
             gui.clearResponses();
             return "Error: " + e.getMessage();
@@ -115,30 +130,6 @@ public class Arn extends Application {
 
     public boolean isExitRequested() {
         return exitRequested;
-    }
-
-    private boolean hasChanges(List<Task> previousTasks, List<Boolean> previousStatuses) {
-        return !previousTasks.equals(taskList.getTasks())
-                || !previousStatuses.equals(getTaskStatuses(taskList.getTasks()));
-    }
-
-    private static List<Boolean> getTaskStatuses(List<Task> tasks) {
-        List<Boolean> statuses = new ArrayList<>();
-        for (Task task : tasks) {
-            statuses.add(task.isDone());
-        }
-        return statuses;
-    }
-
-    private static TaskList restoreTasks(List<Task> tasks, List<Boolean> statuses) {
-        for (int i = 0; i < tasks.size(); i++) {
-            if (statuses.get(i)) {
-                tasks.get(i).markAsDone();
-            } else {
-                tasks.get(i).markAsNotDone();
-            }
-        }
-        return new TaskList(tasks);
     }
 
     public int getTaskCount() {

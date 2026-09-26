@@ -99,6 +99,40 @@ public class MainWindowTest {
     }
 
     @Test
+    public void editingReschedulingAndUndoWorkThroughTheDesktop(@TempDir Path tempDir) throws Exception {
+        runOnFxThread(() -> {
+            WindowFixture window = createWindow(tempDir);
+            MainWindow controller = window.controller;
+            for (String command : new String[]{"deadline Report /by 2026-10-02", "edit 1 Revised report",
+                    "reschedule 1 /by 2026-10-05 1800", "undo"}) {
+                controller.userInput.setText(command);
+                controller.sendButton.fire();
+                assertEquals("", controller.userInput.getText());
+                assertEquals("1 task saved locally", controller.taskCountLabel.getText());
+                DialogBox response = (DialogBox) controller.dialogContainer.getChildren()
+                        .get(controller.dialogContainer.getChildren().size() - 1);
+                assertTrue(response.getStyleClass().contains("arn-dialog"));
+            }
+            Arn reopened = new Arn();
+            reopened.initialize(new TaskFileHandler(tempDir.resolve("arn.txt")));
+            assertEquals("1. [D][ ] Revised report (by Oct 2 2026)", reopened.getResponse("list"));
+
+            controller.userInput.setText("reschedule 1 /by invalid");
+            controller.sendButton.fire();
+            assertEquals("reschedule 1 /by invalid", controller.userInput.getText());
+            controller.userInput.setText("undo");
+            controller.sendButton.fire();
+            controller.userInput.setText("undo");
+            controller.sendButton.fire();
+            assertEquals("0 tasks saved locally", controller.taskCountLabel.getText());
+            controller.userInput.setText("undo");
+            controller.sendButton.fire();
+            assertEquals("undo", controller.userInput.getText());
+            return null;
+        });
+    }
+
+    @Test
     public void saveFailureIsShownAndUnsavedChangeIsRolledBack(@TempDir Path tempDir) throws Exception {
         runOnFxThread(() -> {
             Arn arn = createTestArn(tempDir);

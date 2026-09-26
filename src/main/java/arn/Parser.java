@@ -11,9 +11,13 @@ import java.util.regex.Pattern;
  */
 public final class Parser {
     private static final List<String> COMMANDS = List.of(
-            "todo", "deadline", "event", "list", "mark", "unmark", "delete", "find", "sort", "bye");
+            "todo", "deadline", "event", "list", "mark", "unmark", "delete", "edit", "reschedule",
+            "undo", "find", "sort", "bye");
     private static final String DEADLINE_EXAMPLE = "deadline Submit report /by 2026-10-02 1800";
     private static final String EVENT_EXAMPLE = "event Meeting /from 2026-10-02 1400 /to 2026-10-02 1500";
+    private static final String RESCHEDULE_DEADLINE_EXAMPLE = "reschedule 1 /by 2026-10-05 1800";
+    private static final String RESCHEDULE_EVENT_EXAMPLE =
+            "reschedule 1 /from 2026-10-05 1400 /to 2026-10-05 1500";
     private static final Pattern BY_CLAUSE = Pattern.compile("(?<!\\S)/by(?=\\s|$)", Pattern.UNICODE_CHARACTER_CLASS);
     private static final Pattern FROM_CLAUSE = Pattern.compile("(?<!\\S)/from(?=\\s|$)", Pattern.UNICODE_CHARACTER_CLASS);
     private static final Pattern TO_CLAUSE = Pattern.compile("(?<!\\S)/to(?=\\s|$)", Pattern.UNICODE_CHARACTER_CLASS);
@@ -39,7 +43,7 @@ public final class Parser {
 
         String command = input.strip();
         String commandName = command.split("\\p{javaWhitespace}+", 2)[0];
-        if (List.of("list", "sort", "bye").contains(commandName) && !command.equals(commandName)) {
+        if (List.of("list", "sort", "bye", "undo").contains(commandName) && !command.equals(commandName)) {
             throw new ArnException("'" + commandName + "' does not take extra text. Enter just '"
                     + commandName + "'.");
         }
@@ -59,6 +63,12 @@ public final class Parser {
             event(command);
         } else if (isCommand(command, "delete")) {
             delete(command);
+        } else if (isCommand(command, "edit")) {
+            edit(command);
+        } else if (isCommand(command, "reschedule")) {
+            reschedule(command);
+        } else if (command.equals("undo")) {
+            ui.requestUndo();
         } else if (isCommand(command, "find")) {
             find(command);
         } else if (command.equals("sort")) {
@@ -159,6 +169,74 @@ public final class Parser {
         int i = parseTaskIndex(input, "delete");
         Task t = taskList.remove(i);
         ui.displayMsg("Task removed: " + t.toString());
+    }
+
+    private void edit(String input) throws ArnException {
+        String[] arguments = input.substring("edit".length()).strip().split("\\p{javaWhitespace}+", 2);
+        int index = parseTaskIndex("edit " + arguments[0], "edit");
+        Task task = taskList.get(index);
+        if (arguments.length < 2 || arguments[1].isBlank()) {
+            throw new ArnException("Add a new description after the task number. Example: edit 1 Read chapter two");
+        }
+        String description = arguments[1].strip();
+        if (description.equals(task.getDescription())) {
+            ui.displayMsg("The description is unchanged.");
+            return;
+        }
+
+        Task replacement;
+        if (task instanceof Deadline deadline) {
+            replacement = new Deadline(description, deadline.formatDate(false));
+        } else if (task instanceof Event event) {
+            replacement = new Event(description, event.formatStartDate(false), event.formatEndDate(false));
+        } else {
+            replacement = new Todo(description);
+        }
+        taskList.replace(index, replacement);
+        ui.displayMsg("Task updated:\n" + (index + 1) + ". " + replacement);
+    }
+
+    private void reschedule(String input) throws ArnException {
+        String[] arguments = input.substring("reschedule".length()).strip().split("\\p{javaWhitespace}+", 2);
+        int index = parseTaskIndex("reschedule " + arguments[0], "reschedule");
+        Task task = taskList.get(index);
+        String dates = arguments.length == 2 ? arguments[1].strip() : "";
+        Task replacement;
+        if (task instanceof Deadline deadline) {
+            int by = requireClause(dates, BY_CLAUSE, "/by", 0, RESCHEDULE_DEADLINE_EXAMPLE);
+            if (by != 0) {
+                throw new ArnException("Put '/by' immediately after the task number. Example: "
+                        + RESCHEDULE_DEADLINE_EXAMPLE);
+            }
+            rejectRepeatedClause(dates, BY_CLAUSE, "/by", by, RESCHEDULE_DEADLINE_EXAMPLE);
+            Deadline updated = new Deadline(task.getDescription(), dates.substring(3).strip());
+            if (updated.formatDate(false).equals(deadline.formatDate(false))) {
+                ui.displayMsg("The due date is unchanged.");
+                return;
+            }
+            replacement = updated;
+        } else if (task instanceof Event event) {
+            int from = requireClause(dates, FROM_CLAUSE, "/from", 0, RESCHEDULE_EVENT_EXAMPLE);
+            if (from != 0) {
+                throw new ArnException("Put '/from' immediately after the task number, followed by '/to'. Example: "
+                        + RESCHEDULE_EVENT_EXAMPLE);
+            }
+            int to = requireClause(dates, TO_CLAUSE, "/to", 5, RESCHEDULE_EVENT_EXAMPLE);
+            rejectRepeatedClause(dates, FROM_CLAUSE, "/from", from, RESCHEDULE_EVENT_EXAMPLE);
+            rejectRepeatedClause(dates, TO_CLAUSE, "/to", to, RESCHEDULE_EVENT_EXAMPLE);
+            Event updated = new Event(task.getDescription(), dates.substring(5, to).strip(),
+                    dates.substring(to + 3).strip());
+            if (updated.formatStartDate(false).equals(event.formatStartDate(false))
+                    && updated.formatEndDate(false).equals(event.formatEndDate(false))) {
+                ui.displayMsg("The event dates are unchanged.");
+                return;
+            }
+            replacement = updated;
+        } else {
+            throw new ArnException("Todos have no date to reschedule. Choose a deadline or event from 'list'.");
+        }
+        taskList.replace(index, replacement);
+        ui.displayMsg("Task rescheduled:\n" + (index + 1) + ". " + replacement);
     }
 
     private void find(String input) throws ArnException {

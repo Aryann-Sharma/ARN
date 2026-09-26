@@ -57,6 +57,14 @@ public final class PackagedGuiProbe {
                 send.fire();
                 require("1 task saved locally".equals(count.getText()), "Task count was not updated");
                 require(input.getText().isEmpty(), "Successful command was not cleared");
+                input.setText("edit 1 Review task editing");
+                send.fire();
+                require(Files.readString(Path.of("data/arn.txt")).contains("Review task editing"),
+                        "Desktop edit was not saved");
+                input.setText("undo");
+                send.fire();
+                require(Files.readString(Path.of("data/arn.txt")).contains("Review the desktop release"),
+                        "Desktop undo did not restore the description");
                 input.setText("deadline Invalid date /by 2026-02-30");
                 send.fire();
                 require(!input.getText().isEmpty(), "Invalid command was not retained for correction");

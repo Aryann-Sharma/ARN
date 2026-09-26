@@ -41,6 +41,10 @@ public class Ui implements AutoCloseable {
         output.println(msg);
     }
 
+    public void requestUndo() throws ArnException {
+        throw new ArnException("Undo must run through an active Arn session.");
+    }
+
     @Override
     public void close() {
         if (scanner != null) {

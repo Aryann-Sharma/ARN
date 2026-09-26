@@ -6,6 +6,7 @@ import java.util.List;
 public class Gui extends Ui {
     private final List<String> responses;
     private boolean exitRequested;
+    private boolean undoRequested;
 
     public Gui() {
         super();
@@ -27,6 +28,15 @@ public class Gui extends Ui {
         return exitRequested;
     }
 
+    @Override
+    public void requestUndo() {
+        undoRequested = true;
+    }
+
+    boolean isUndoRequested() {
+        return undoRequested;
+    }
+
     public String getResponses() {
         String result = String.join("\n", responses);
         clearResponses();
@@ -36,5 +46,6 @@ public class Gui extends Ui {
     public void clearResponses() {
         responses.clear();
         exitRequested = false;
+        undoRequested = false;
     }
 }

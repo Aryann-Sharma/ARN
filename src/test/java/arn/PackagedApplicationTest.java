@@ -72,6 +72,20 @@ public class PackagedApplicationTest {
     }
 
     @Test
+    public void packagedEditingAndUndoPersistAcrossLaunches(@TempDir Path directory) throws Exception {
+        Result first = run(directory, "deadline Report /by 2026-10-02\nmark 1\nedit 1 Revised café report\n"
+                + "reschedule 1 /by 2026-10-05 0000\nundo\nlist\nbye\n", "--cli");
+        assertEquals(0, first.exitCode(), first.output());
+        assertFalse(first.output().contains("Error:"), first.output());
+        assertTrue(first.output().contains("1. [D][X] Revised café report (by Oct 2 2026)"), first.output());
+
+        Result second = run(directory, "undo\nlist\nbye\n", "--cli");
+        assertEquals(0, second.exitCode(), second.output());
+        assertTrue(second.output().contains("Error: Nothing to undo."), second.output());
+        assertTrue(second.output().contains("1. [D][X] Revised café report (by Oct 2 2026)"), second.output());
+    }
+
+    @Test
     public void malformedSaveStopsConsoleWithoutOverwritingData(@TempDir Path directory) throws Exception {
         Path saveFile = directory.resolve("data/arn.txt");
         Files.createDirectories(saveFile.getParent());
