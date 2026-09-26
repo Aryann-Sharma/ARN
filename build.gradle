@@ -8,6 +8,17 @@ repositories {
     mavenCentral()
 }
 
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.compilerArgs.addAll(['-Xlint:all'])
+}
+
 dependencies {
     String javaFxVersion = '17.0.7'
 
@@ -52,7 +63,7 @@ shadowJar {
     archiveFileName = "Arn.jar"
 }
 
-run{
+run {
     standardInput = System.in
 }
 
