@@ -145,13 +145,30 @@ Reschedule a deadline with `/by`:
 reschedule 2 /by 2026-10-05 1800
 ```
 
-Reschedule an event by supplying both `/from` and `/to`:
+Reschedule an event with `/from`, `/to`, or both. An omitted endpoint stays unchanged. When supplying both markers, put `/from` first:
 
 ```text
 reschedule 3 /from 2026-10-05 1200 /to 2026-10-05 1330
 ```
 
-Rescheduling keeps the description, task number, type, and completion status. The usual date rules apply: both event endpoints must use the same format, and the end cannot precede the start. You can switch between date-only and timed dates. An explicit midnight (`0000`) stays distinct from a date without a time. Todos cannot be rescheduled because they have no date.
+**For events, leaving a time out does not remove an existing time.** A supplied date without a time changes only the date and keeps that endpoint's time, including midnight (`0000`). A supplied date and time replaces both. This rule applies to one-sided updates and to commands containing both markers. An endpoint that already has no time stays date-only when you supply another date without a time.
+
+For example, suppose event 3 starts at **October 5, 2 PM** and ends at **October 7, 4 PM**. Each row below starts from that same event:
+
+| Command | Result |
+| --- | --- |
+| `reschedule 3 /from 2026-10-06` | Start becomes October 6 at 2 PM; end stays October 7 at 4 PM. |
+| `reschedule 3 /to 2026-10-08` | End becomes October 8 at 4 PM; start stays October 5 at 2 PM. |
+| `reschedule 3 /from 2026-10-06 1500` | Start becomes October 6 at 3 PM; end stays October 7 at 4 PM. |
+| `reschedule 3 /from 2026-10-08 /to 2026-10-09` | Start becomes October 8 at 2 PM; end becomes October 9 at 4 PM. |
+
+The response shows both resulting endpoints, including retained times, even when nothing changes. Check those values after rescheduling. The command never automatically moves the other endpoint to preserve the event's duration.
+
+Rescheduling keeps the description, task number, type, and completion status. The resulting event must still have either two timed endpoints or two date-only endpoints, and the end cannot precede the start. For example, an event from October 5 at 6 PM to October 6 at 9 AM cannot have its start moved to October 6 without a new time: its retained 6 PM would be later than the end. Supply a valid start time or update both endpoints.
+
+To add times to a date-only event, supply times for both endpoints in one command. Removing times from a timed event is not supported by `reschedule`; date-only input retains them. Creating events still requires both endpoints, either both with times or both without them.
+
+The event time-retention rule does not change deadline rescheduling: `/by` replaces the complete due date, so a date without a time makes the deadline date-only. Todos cannot be rescheduled because they have no date.
 
 An invalid edit or reschedule leaves the task unchanged. Entering the existing description or dates does not save again or add an undo entry.
 

@@ -21,9 +21,13 @@ public final class Event extends Task {
      * @throws ArnException if a date is invalid, the formats differ, or the end precedes the start
      */
     public Event(String description, String startDate, String endDate) throws ArnException {
+        this(description, TaskDate.parse(startDate, "Event start"), TaskDate.parse(endDate, "Event end"));
+    }
+
+    private Event(String description, TaskDate startDate, TaskDate endDate) throws ArnException {
         super(description);
-        this.startDate = TaskDate.parse(startDate, "Event start");
-        this.endDate = TaskDate.parse(endDate, "Event end");
+        this.startDate = startDate;
+        this.endDate = endDate;
         if (this.startDate.hasTime() != this.endDate.hasTime()) {
             throw new ArnException("Event start and end use different formats. "
                     + "Include a time in both the start and end, or omit both times.");
@@ -37,6 +41,17 @@ public final class Event extends Task {
 
     public String getType() {
         return "E";
+    }
+
+    /** Returns an updated event; null keeps an endpoint, and a date alone keeps its time. */
+    Event reschedule(String start, String end) throws ArnException {
+        TaskDate updatedStart = start == null ? startDate : startDate.reschedule(start, "Event start");
+        TaskDate updatedEnd = end == null ? endDate : endDate.reschedule(end, "Event end");
+        Event updated = new Event(getDescription(), updatedStart, updatedEnd);
+        if (isDone()) {
+            updated.markAsDone();
+        }
+        return updated;
     }
 
     public String formatStartDate(boolean pretty) {

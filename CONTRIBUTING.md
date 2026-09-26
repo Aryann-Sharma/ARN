@@ -46,6 +46,8 @@ Use temporary directories for test data. For storage changes, test failed saves 
 
 For editing and undo, check all task types, task order, completion status, explicit midnight, unchanged values, and multiple consecutive undos. A failed change or undo must preserve both the current tasks and the available undo history. Include restart checks to distinguish persisted tasks from session-only history.
 
+Event rescheduling treats a missing marker as an unchanged endpoint and a date-only value as retaining that endpoint's existing time. Resolve those values before checking event order and date precision. Test single-endpoint updates, retained midnight, explicit time replacements, failed saves, and undo. Creation and deadline rescheduling keep their existing date rules.
+
 CI runs checks on Windows, Linux, and Intel macOS. Linux uses Xvfb. Test reports, coverage, and GUI screenshots are uploaded as build artifacts, and the Linux job uploads the runnable JAR.
 
 ## Before opening a pull request
