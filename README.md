@@ -2,7 +2,7 @@
 
 Arn is a lightweight desktop task assistant built with Java 17 and JavaFX. It uses a conversational command interface to capture todos, track deadlines, schedule events, and search or sort saved tasks.
 
-Tasks are stored locally, so they remain available between sessions without requiring an account or internet connection.
+Tasks are stored locally, so they remain available between sessions without requiring an account or an internet connection at runtime.
 
 ## Features
 
@@ -34,7 +34,7 @@ On macOS or Linux:
 ./gradlew run
 ```
 
-Enter a command in the composer and press **Enter** or select **Send**. The **Show tasks**, **Upcoming**, and **Examples** quick actions provide shortcuts for common workflows.
+Enter a command in the composer and press **Enter** or select **Send**. The **Show tasks**, **By date**, and **Examples** quick actions provide shortcuts for common workflows.
 
 ## Command reference
 
@@ -48,10 +48,10 @@ Enter a command in the composer and press **Enter** or select **Send**. The **Sh
 | `unmark NUMBER` | Mark a task incomplete | `unmark 1` |
 | `delete NUMBER` | Delete a task | `delete 1` |
 | `find KEYWORD` | Find tasks by description | `find report` |
-| `sort` | Show deadlines and events by date | `sort` |
-| `bye` | End the conversation | `bye` |
+| `sort` | Display all deadlines and events by date without changing their saved order | `sort` |
+| `bye` | Display Arn's farewell message | `bye` |
 
-Dates use `YYYY-MM-DD` or `YYYY-MM-DD HHMM` in 24-hour time.
+Commands are case-sensitive and should be entered in lowercase. Dates use `YYYY-MM-DD` or `YYYY-MM-DD HHMM` in 24-hour time. An event's start and end must both include a time or both omit it.
 
 For detailed examples, see the [user guide](docs/README.md).
 
@@ -99,9 +99,15 @@ The suite covers task models, parsing, collection behavior, and a JavaFX smoke t
 
 The packaged application is written to `build/libs/Arn.jar`.
 
+Run it with:
+
+```bash
+java -jar build/libs/Arn.jar
+```
+
 ## Data and privacy
 
-Arn writes task data only to `data/arn.txt` in the application directory. This runtime file is excluded from Git. Avoid storing sensitive information in task descriptions if the project directory is shared or backed up to a public location.
+Arn writes task data to `data/arn.txt`, relative to the directory from which the application is launched. Valid commands are saved immediately. This runtime file is excluded from Git. Avoid storing sensitive information in task descriptions if the project directory is shared or backed up to a public location.
 
 ## Artwork
 

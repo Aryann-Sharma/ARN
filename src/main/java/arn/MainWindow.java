@@ -51,7 +51,7 @@ public class MainWindow extends AnchorPane {
     }
 
     @FXML
-    private void handleUpcomingTasks() {
+    private void handleSortByDate() {
         submitCommand("sort");
     }
 

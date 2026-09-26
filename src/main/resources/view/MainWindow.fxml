@@ -55,8 +55,8 @@
                         <Label styleClass="quick-label" text="QUICK ACTIONS" />
                         <Button mnemonicParsing="false" onAction="#handleListTasks"
                                 styleClass="action-chip" text="☷  Show tasks" />
-                        <Button mnemonicParsing="false" onAction="#handleUpcomingTasks"
-                                styleClass="action-chip" text="◷  Upcoming" />
+                        <Button mnemonicParsing="false" onAction="#handleSortByDate"
+                                styleClass="action-chip" text="◷  By date" />
                         <Button mnemonicParsing="false" onAction="#handleShowExamples"
                                 styleClass="action-chip" text="?  Examples" />
                     </children>
