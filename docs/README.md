@@ -129,6 +129,22 @@ Task numbers start at 1. Deleting a task shifts the numbers of later tasks, so u
 
 Marking an already completed task, or unmarking an already incomplete task, leaves the save file unchanged.
 
+## Correcting commands
+
+An error leaves your tasks unchanged. The message explains what to correct; syntax errors also show an example where useful.
+
+| Input | What to correct |
+| --- | --- |
+| `deadline Submit report/by` | Put spaces around `/by` and add a due date, for example `deadline Submit report /by 2026-10-02 1800`. |
+| `event Meeting /to 2026-10-02 /from 2026-10-01` | Put `/from` before `/to`. |
+| `deadline Report /by 2026-02-30` | The format is correct, but February 30 does not exist. Choose a valid calendar date. |
+| `deadline Report /by 2026-10-02 2400` | Use a time from `0000` to `2359`, with minutes from `00` to `59`. For midnight at the start of the next day, use `2026-10-03 0000`. |
+| `mark 1 2` | Give one task number at a time, for example `mark 1`. |
+| `TODO Read a chapter` | Command names must be lowercase: `todo Read a chapter`. |
+| `bye now` | `bye` takes no extra text. Enter `bye` by itself. |
+
+For an out-of-range task number, the error reports the available range or explains that the list is empty. Use `list` to check the current numbers.
+
 ## Console mode
 
 ```bash
@@ -146,7 +162,11 @@ java -jar Arn.jar --version
 
 Command errors are printed and the session continues. Exit code 0 means the session ended normally; it does not mean every command succeeded.
 
-In the desktop application, `bye` displays a farewell. Close the window to exit.
+## Close the app
+
+In the desktop application, `bye` displays a farewell for three seconds, then closes the window. Command input and quick actions are disabled during the pause. You can also close the window yourself. There is no confirmation prompt because each successful change has already been saved.
+
+In the console, `bye` exits immediately after printing the farewell. Extra text such as `bye now` produces an error and leaves the session open.
 
 ## Saving and recovering data
 

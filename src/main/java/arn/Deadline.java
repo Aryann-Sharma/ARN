@@ -16,11 +16,11 @@ public final class Deadline extends Task {
      *
      * @param description description of the task
      * @param date due date in string format
-     * @throws ArnException if the date format is invalid
+     * @throws ArnException if the date format, calendar date, or time is invalid
      */
     public Deadline(String description, String date) throws ArnException {
         super(description);
-        this.date = TaskDate.parse(date);
+        this.date = TaskDate.parse(date, "Deadline due");
     }
 
     public String getType() {

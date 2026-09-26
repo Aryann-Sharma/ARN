@@ -87,6 +87,24 @@ public class ArnTest {
         assertEquals("1. [T][ ] Original task", arn.getResponse("list"));
     }
 
+    @Test
+    public void onlySuccessfulByeRequestsExit(@TempDir Path directory) throws Exception {
+        Path saveFile = directory.resolve("arn.txt");
+        Arn arn = open(saveFile);
+        assertFalse(arn.isExitRequested());
+        assertTrue(arn.getResponse("bye now").startsWith("Error:"));
+        assertFalse(arn.isExitRequested());
+        assertFalse(arn.getResponse("todo Say bye to a friend").startsWith("Error:"));
+        assertFalse(arn.isExitRequested());
+        String saved = Files.readString(saveFile);
+
+        assertEquals("Bye. Hope to see you again soon!", arn.getResponse("  bye  "));
+        assertTrue(arn.isExitRequested());
+        assertEquals(saved, Files.readString(saveFile));
+        assertTrue(arn.getResponse("bye now").startsWith("Error:"));
+        assertFalse(arn.isExitRequested(), "A rejected command must not reuse an earlier exit signal");
+    }
+
     private Arn open(Path file) throws StorageException {
         Arn arn = new Arn();
         arn.initialize(new TaskFileHandler(file));

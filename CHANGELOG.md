@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.1 — 2026-09-26
+
+- Explain missing spaces around date markers, missing arguments, repeated markers, and event markers in the wrong order, with examples of valid commands.
+- Distinguish date format errors from nonexistent calendar dates and invalid times. Identify whether a problem is in the deadline date or an event's start or end.
+- Report available task numbers and give clearer guidance for unknown commands, letter case, and extra arguments.
+- Include the save path and recovery advice in storage errors, and explain malformed records without discarding their validation details.
+- Make desktop `bye` display a farewell for three seconds before closing. Disable command input and quick actions during the pause.
+- Add regression tests for error explanations, recovery examples, and closing the packaged desktop app.
+
 ## 0.3.0 — 2026-09-26
 
 ### Commands and dates

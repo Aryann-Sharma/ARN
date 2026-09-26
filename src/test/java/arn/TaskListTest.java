@@ -101,5 +101,54 @@ public class TaskListTest {
         sorted.clear();
         assertEquals(savedOrder, taskList.getTasks());
     }
-}
 
+    @Test
+    public void testEmptyListErrorsExplainThatATaskMustBeAdded() {
+        TaskList taskList = new TaskList(List.of());
+
+        ArnException getError = assertThrows(ArnException.class, () -> taskList.get(0));
+        ArnException removeError = assertThrows(ArnException.class, () -> taskList.remove(0));
+
+        assertEquals("Your task list is empty. Add a task first, then use list to see its number.",
+                getError.getMessage());
+        assertEquals(getError.getMessage(), removeError.getMessage());
+    }
+
+    @Test
+    public void testSingleTaskErrorsIdentifyTheOnlyAvailableNumber() {
+        TaskList taskList = new TaskList(List.of(new Todo("read")));
+
+        ArnException getError = assertThrows(ArnException.class, () -> taskList.get(1));
+        ArnException removeError = assertThrows(ArnException.class, () -> taskList.remove(1));
+
+        assertEquals("Task number 2 does not exist. Your only task is number 1. Use list to see it.",
+                getError.getMessage());
+        assertEquals(getError.getMessage(), removeError.getMessage());
+    }
+
+    @Test
+    public void testOutOfRangeErrorsShowTheCurrentOneBasedRange() throws ArnException {
+        TaskList taskList = new TaskList(List.of(new Todo("read"), new Todo("write"), new Todo("exercise")));
+
+        ArnException getError = assertThrows(ArnException.class, () -> taskList.get(3));
+        ArnException removeError = assertThrows(ArnException.class, () -> taskList.remove(3));
+        assertEquals("Task number 4 does not exist. Choose a number from 1 to 3. Use list to see your tasks.",
+                getError.getMessage());
+        assertEquals(getError.getMessage(), removeError.getMessage());
+
+        taskList.remove(0);
+        ArnException afterRemoval = assertThrows(ArnException.class, () -> taskList.get(2));
+        assertEquals("Task number 3 does not exist. Choose a number from 1 to 2. Use list to see your tasks.",
+                afterRemoval.getMessage());
+    }
+
+    @Test
+    public void testLargeIndexIsReportedWithoutIntegerOverflow() {
+        TaskList taskList = new TaskList(List.of(new Todo("read"), new Todo("write")));
+
+        ArnException error = assertThrows(ArnException.class, () -> taskList.get(Integer.MAX_VALUE));
+
+        assertEquals("Task number 2147483648 does not exist. Choose a number from 1 to 2. "
+                + "Use list to see your tasks.", error.getMessage());
+    }
+}

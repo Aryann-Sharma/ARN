@@ -32,4 +32,21 @@ public class ToDoTest {
             assertThrows(IllegalArgumentException.class, () -> new Todo(description));
         }
     }
+
+    @Test
+    public void testMissingDescriptionExplainsHowToCorrectIt() {
+        NullPointerException missing = assertThrows(NullPointerException.class, () -> new Todo(null));
+        IllegalArgumentException blank = assertThrows(IllegalArgumentException.class, () -> new Todo(" \t"));
+
+        assertEquals("Task description is required. Add a short description of the task.", missing.getMessage());
+        assertEquals(missing.getMessage(), blank.getMessage());
+    }
+
+    @Test
+    public void testMultilineDescriptionExplainsHowToCorrectIt() {
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> new Todo("read\nbook"));
+
+        assertEquals("Task description must be on one line. Remove any line breaks.", error.getMessage());
+    }
 }

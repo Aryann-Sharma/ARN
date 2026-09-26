@@ -80,8 +80,9 @@ public class ParserTest {
         ArnException todoError = assertThrows(ArnException.class, () -> parser.parse("todo"));
         ArnException markError = assertThrows(ArnException.class, () -> parser.parse("mark"));
 
-        assertEquals("Empty task description.", todoError.getMessage());
-        assertEquals("No task number provided to mark.", markError.getMessage());
+        assertEquals("Add a description after 'todo'. Example: todo Read a chapter", todoError.getMessage());
+        assertEquals("Add a task number after 'mark'. Example: mark 1. Use 'list' to see task numbers.",
+                markError.getMessage());
     }
 
     @Test
@@ -92,7 +93,8 @@ public class ParserTest {
         ArnException error = assertThrows(ArnException.class,
                 () -> parser.parse("event review /to 2026-10-02 /from 2026-10-01"));
 
-        assertEquals("Event task must have both '/from' and '/to' clauses.", error.getMessage());
+        assertTrue(error.getMessage().startsWith("Put '/from' before '/to'"), error.getMessage());
+        assertTrue(error.getMessage().contains("Example: event "), error.getMessage());
         assertEquals(0, taskList.size());
     }
 
@@ -159,9 +161,11 @@ public class ParserTest {
 
         parser.parse("deadline review /bylaws and path/by /by 2026-10-01");
         parser.parse("event review /fromage and /today /from 2026-10-01 /to 2026-10-02");
+        parser.parse("event explain /to syntax /from 2026-10-01 /to 2026-10-02");
 
         assertEquals("review /bylaws and path/by", taskList.get(0).getDescription());
         assertEquals("review /fromage and /today", taskList.get(1).getDescription());
+        assertEquals("explain /to syntax", taskList.get(2).getDescription());
     }
 
     @Test
@@ -169,13 +173,105 @@ public class ParserTest {
         TaskList taskList = new TaskList(List.of());
         Parser parser = new Parser(taskList, new Gui());
 
-        assertThrows(ArnException.class, () -> parser.parse("deadline report/by 2026-10-01"));
-        assertThrows(ArnException.class, () -> parser.parse("deadline report /by2026-10-01"));
-        assertThrows(ArnException.class,
-                () -> parser.parse("event trip /from2026-10-01 /to 2026-10-02"));
-        assertThrows(ArnException.class,
-                () -> parser.parse("event trip /from 2026-10-01 /to2026-10-02"));
+        String[][] commands = {
+            {"deadline submit report/by", "/by"},
+            {"deadline report/by 2026-10-01", "/by"},
+            {"deadline report /by2026-10-01", "/by"},
+            {"event trip/from 2026-10-01 /to 2026-10-02", "/from"},
+            {"event trip /from2026-10-01 /to 2026-10-02", "/from"},
+            {"event trip /from 2026-10-01 /to2026-10-02", "/to"}
+        };
+        for (String[] command : commands) {
+            ArnException error = assertThrows(ArnException.class, () -> parser.parse(command[0]), command[0]);
+            assertTrue(error.getMessage().contains("'" + command[1] + "' as a separate marker"),
+                    error.getMessage());
+            assertTrue(error.getMessage().contains("space before it and before the date"), error.getMessage());
+            assertTrue(error.getMessage().contains("Example: "), error.getMessage());
+        }
         assertEquals(0, taskList.size());
+    }
+
+    @Test
+    public void testMissingFieldsIdentifyWhatToAdd() {
+        TaskList taskList = new TaskList(List.of());
+        Parser parser = new Parser(taskList, new Gui());
+        String[][] commands = {
+            {"deadline /by 2026-10-02", "description before '/by'"},
+            {"deadline report /by", "due date after '/by'"},
+            {"event /from 2026-10-01 /to 2026-10-02", "description before '/from'"},
+            {"event review /from /to 2026-10-02", "start date after '/from' and before '/to'"},
+            {"event review /from 2026-10-01 /to", "end date after '/to'"},
+            {"find", "text to search for after 'find'"}
+        };
+        for (String[] command : commands) {
+            ArnException error = assertThrows(ArnException.class, () -> parser.parse(command[0]), command[0]);
+            assertTrue(error.getMessage().contains(command[1]), error.getMessage());
+        }
+        assertEquals(0, taskList.size());
+    }
+
+    @Test
+    public void testRepeatedDateMarkersHaveSpecificErrors() {
+        TaskList taskList = new TaskList(List.of());
+        Parser parser = new Parser(taskList, new Gui());
+        String[][] commands = {
+            {"deadline report /by 2026-10-01 /by 2026-10-02", "/by"},
+            {"event review /from 2026-10-01 /from 2026-10-02 /to 2026-10-03", "/from"},
+            {"event review /from 2026-10-01 /to 2026-10-02 /to 2026-10-03", "/to"}
+        };
+        for (String[] command : commands) {
+            ArnException error = assertThrows(ArnException.class, () -> parser.parse(command[0]), command[0]);
+            assertTrue(error.getMessage().startsWith("Use '" + command[1] + "' only once."), error.getMessage());
+        }
+        assertEquals(0, taskList.size());
+    }
+
+    @Test
+    public void testCommandSpellingAndExtraArgumentsHaveDifferentErrors() {
+        Parser parser = new Parser(new TaskList(List.of()), new Gui());
+        ArnException uppercase = assertThrows(ArnException.class, () -> parser.parse("TODO Read a chapter"));
+        assertEquals("Command names are case-sensitive. Use 'todo' instead of 'TODO'.", uppercase.getMessage());
+        ArnException unknown = assertThrows(ArnException.class, () -> parser.parse("todoctor visit"));
+        assertTrue(unknown.getMessage().startsWith("Unknown command 'todoctor'. Available commands:"));
+
+        for (String command : List.of("list", "sort", "bye")) {
+            ArnException extra = assertThrows(ArnException.class, () -> parser.parse(command + " now"));
+            assertEquals("'" + command + "' does not take extra text. Enter just '" + command + "'.",
+                    extra.getMessage());
+        }
+    }
+
+    @Test
+    public void testTaskNumberSyntaxErrorsExplainTheCommand() {
+        TaskList taskList = new TaskList(List.of(new Todo("existing task")));
+        Parser parser = new Parser(taskList, new Gui());
+        for (String command : List.of("mark", "unmark", "delete")) {
+            ArnException missing = assertThrows(ArnException.class, () -> parser.parse(command));
+            assertTrue(missing.getMessage().contains("Add a task number after '" + command + "'"));
+            for (String number : List.of("0", "-1", "1.5", "abc", "1 2")) {
+                ArnException invalid = assertThrows(ArnException.class, () -> parser.parse(command + " " + number));
+                assertTrue(invalid.getMessage().contains("one whole task number after '" + command + "'"));
+                assertTrue(invalid.getMessage().contains("starting at 1"));
+            }
+        }
+        assertEquals(1, taskList.size());
+        assertFalse(assertDoesNotThrow(() -> taskList.get(0)).isDone());
+    }
+
+    @Test
+    public void testRecoveryExamplesAreValidCommands() {
+        for (String input : List.of("todo", "deadline report/by", "deadline /by 2026-10-02",
+                "deadline report /by", "event meeting", "event meeting /from /to 2026-10-02",
+                "event meeting /to 2026-10-02 /from 2026-10-01", "find")) {
+            TaskList taskList = new TaskList(List.of());
+            Parser parser = new Parser(taskList, new Gui());
+            ArnException error = assertThrows(ArnException.class, () -> parser.parse(input), input);
+            assertEquals(0, taskList.size(), input);
+            String marker = "Example: ";
+            assertTrue(error.getMessage().contains(marker), error.getMessage());
+            String example = error.getMessage().substring(error.getMessage().indexOf(marker) + marker.length());
+            assertDoesNotThrow(() -> parser.parse(example), example);
+        }
     }
 
     @Test

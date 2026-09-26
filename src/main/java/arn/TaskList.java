@@ -18,7 +18,10 @@ public final class TaskList {
      * @param taskList the list of tasks to initialize with
      */
     public TaskList(List<Task> taskList) {
-        this.taskList = new ArrayList<>(List.copyOf(Objects.requireNonNull(taskList, "taskList")));
+        this.taskList = new ArrayList<>(Objects.requireNonNull(taskList, "Initial tasks are required."));
+        for (Task task : this.taskList) {
+            Objects.requireNonNull(task, "Task list cannot contain null tasks.");
+        }
     }
 
     public List<Task> getTasks() {
@@ -32,9 +35,7 @@ public final class TaskList {
      * @throws ArnException if the index is out of bounds
      */
     public Task get(int index) throws ArnException {
-        if (index < 0 || index >= taskList.size()) {
-            throw new ArnException("Invalid task number.");
-        }
+        validateIndex(index);
         return taskList.get(index);
     }
 
@@ -44,7 +45,7 @@ public final class TaskList {
      * @param task the task to add
      */
     public void add(Task task) {
-        taskList.add(Objects.requireNonNull(task, "task"));
+        taskList.add(Objects.requireNonNull(task, "Task to add is required."));
     }
 
     /**
@@ -54,10 +55,25 @@ public final class TaskList {
      * @throws ArnException if the index is out of bounds
      */
     public Task remove(int index) throws ArnException {
-        if (index < 0 || index >= taskList.size()) {
-            throw new ArnException("Invalid task number.");
-        }
+        validateIndex(index);
         return taskList.remove(index);
+    }
+
+    private void validateIndex(int index) throws ArnException {
+        if (index >= 0 && index < taskList.size()) {
+            return;
+        }
+        if (taskList.isEmpty()) {
+            throw new ArnException("Your task list is empty. Add a task first, then use list to see its number.");
+        }
+
+        long taskNumber = (long) index + 1;
+        if (taskList.size() == 1) {
+            throw new ArnException("Task number " + taskNumber
+                    + " does not exist. Your only task is number 1. Use list to see it.");
+        }
+        throw new ArnException("Task number " + taskNumber + " does not exist. Choose a number from 1 to "
+                + taskList.size() + ". Use list to see your tasks.");
     }
 
     /**
@@ -67,6 +83,7 @@ public final class TaskList {
      * @return a list of matching tasks
      */
     public List<Task> find(String keyword) {
+        Objects.requireNonNull(keyword, "Search keyword is required.");
         String normalizedKeyword = keyword.toLowerCase(Locale.ROOT);
         List<Task> matchList = new ArrayList<>();
         for (Task task : taskList) {

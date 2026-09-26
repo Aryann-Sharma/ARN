@@ -20,7 +20,7 @@ import org.junit.jupiter.api.io.TempDir;
 /** Exercises the distributable in a separate JVM with no Gradle runtime classpath. */
 public class PackagedApplicationTest {
     @Test
-    public void packagedDesktopStartsAndSavesTasks(@TempDir Path directory) throws Exception {
+    public void packagedDesktopSavesTasksAndClosesAfterFarewell(@TempDir Path directory) throws Exception {
         Path probeClasses = Path.of(PackagedGuiProbe.class.getProtectionDomain().getCodeSource().getLocation().toURI());
         String executable = System.getProperty("os.name").startsWith("Windows") ? "java.exe" : "java";
         Path output = directory.resolve("desktop.log");
@@ -33,6 +33,8 @@ public class PackagedApplicationTest {
             assertTrue(process.waitFor(30, TimeUnit.SECONDS), "Packaged desktop did not finish its startup checks");
             assertEquals(0, process.exitValue(), Files.readString(output));
             assertTrue(Files.exists(Path.of(System.getProperty("arn.uiReport"), "desktop.png")));
+            assertTrue(Files.exists(Path.of(System.getProperty("arn.uiReport"), "desktop-small.png")));
+            assertTrue(Files.exists(Path.of(System.getProperty("arn.uiReport"), "desktop-farewell.png")));
         } finally {
             if (process.isAlive()) {
                 process.destroyForcibly();
@@ -80,7 +82,20 @@ public class PackagedApplicationTest {
 
         assertEquals(1, result.exitCode(), result.output());
         assertTrue(result.output().contains("line 3"), result.output());
+        assertFalse(result.output().contains("StorageException"), result.output());
         assertEquals(data, Files.readString(saveFile));
+    }
+
+    @Test
+    public void consoleRejectsMalformedByeAndStopsAfterSuccessfulBye(@TempDir Path directory) throws Exception {
+        Result result = run(directory, "bye now\ntodo Before exit\nbye\ntodo After exit\n", "--cli");
+        assertEquals(0, result.exitCode(), result.output());
+        assertTrue(result.output().contains("Error:"), result.output());
+        assertTrue(result.output().contains("Bye. Hope to see you again soon!"));
+        assertFalse(result.output().contains("Closing in 3 seconds."));
+        String saved = Files.readString(directory.resolve("data/arn.txt"));
+        assertTrue(saved.contains("Before exit"));
+        assertFalse(saved.contains("After exit"));
     }
 
     @Test
@@ -91,7 +106,15 @@ public class PackagedApplicationTest {
         Result version = run(directory, "", "--version");
         assertEquals(0, version.exitCode());
         assertEquals("Arn " + System.getProperty("arn.version"), version.output().strip());
-        assertEquals(2, run(directory, "", "--unknown").exitCode());
+        Result unknown = run(directory, "", "--unknown");
+        assertEquals(2, unknown.exitCode());
+        assertTrue(unknown.output().contains("Unknown launch option \"--unknown\""), unknown.output());
+        assertTrue(unknown.output().contains("--help"), unknown.output());
+        assertTrue(unknown.output().contains("Usage: java -jar Arn.jar"), unknown.output());
+        Result multiple = run(directory, "", "--cli", "--version");
+        assertEquals(2, multiple.exitCode());
+        assertTrue(multiple.output().contains("Expected at most one launch option"), multiple.output());
+        assertTrue(multiple.output().contains("on its own"), multiple.output());
         assertFalse(Files.exists(directory.resolve("data")));
     }
 
