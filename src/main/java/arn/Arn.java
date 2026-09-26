@@ -3,6 +3,7 @@ import java.util.ArrayList;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 import java.io.IOException;
@@ -57,7 +58,12 @@ public class Arn extends Application {
             FXMLLoader fxmlLoader = new FXMLLoader(Arn.class.getResource("/view/MainWindow.fxml"));
             AnchorPane ap = fxmlLoader.load();
             Scene scene = new Scene(ap);
+            scene.getStylesheets().add(Arn.class.getResource("/styles/main.css").toExternalForm());
             stage.setScene(scene);
+            stage.setTitle("Arn — Your task assistant");
+            stage.getIcons().add(new Image(Arn.class.getResourceAsStream("/images/ArnLogo.png")));
+            stage.setMinWidth(560);
+            stage.setMinHeight(640);
             fxmlLoader.<MainWindow>getController().setArn(this);
             stage.show();
         } catch (IOException e) {
@@ -73,5 +79,9 @@ public class Arn extends Application {
         } catch (ArnException e) {
             return "Error: " + e.getMessage();
         }
+    }
+
+    public int getTaskCount() {
+        return taskList.size();
     }
 }

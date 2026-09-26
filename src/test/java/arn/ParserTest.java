@@ -27,6 +27,18 @@ public class ParserTest {
     }
 
     @Test
+    public void testListCommandWhenEmpty() throws ArnException {
+        TaskList taskList = new TaskList(new ArrayList<>());
+        Gui gui = new Gui();
+        Parser parser = new Parser(taskList, gui);
+
+        parser.parse("list");
+
+        assertEquals("Your task list is empty. Add a todo, deadline, or event to get started.",
+                gui.getResponses());
+    }
+
+    @Test
     public void testDeleteCommand() throws ArnException {
         TaskList taskList = new TaskList(new ArrayList<>());
         taskList.add(new Todo("gym"));

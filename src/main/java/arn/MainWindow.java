@@ -1,6 +1,8 @@
 package arn;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
@@ -15,6 +17,8 @@ public class MainWindow extends AnchorPane {
     protected TextField userInput;
     @FXML
     protected Button sendButton;
+    @FXML
+    protected Label taskCountLabel;
 
     protected Arn arn;
 
@@ -23,21 +27,68 @@ public class MainWindow extends AnchorPane {
 
     @FXML
     public void initialize() {
-        scrollPane.vvalueProperty().bind(dialogContainer.heightProperty());
+        dialogContainer.heightProperty().addListener((observable, oldHeight, newHeight) ->
+                scrollPane.setVvalue(1.0));
     }
 
     public void setArn(Arn a) {
         arn = a;
+        updateTaskCount();
+        dialogContainer.getChildren().add(DialogBox.getArnDialog(
+                "Hi, I'm Arn. I can help you capture todos, track deadlines, and plan events. "
+                        + "Try a quick action above or type a command below.", arnImage));
+        Platform.runLater(userInput::requestFocus);
     }
 
     @FXML
     private void handleUserInput() {
-        String input = userInput.getText();
+        submitCommand(userInput.getText());
+    }
+
+    @FXML
+    private void handleListTasks() {
+        submitCommand("list");
+    }
+
+    @FXML
+    private void handleUpcomingTasks() {
+        submitCommand("sort");
+    }
+
+    @FXML
+    private void handleShowExamples() {
+        dialogContainer.getChildren().add(DialogBox.getArnDialog(
+                "Here are a few things you can ask me:\n\n"
+                        + "todo Read a chapter\n"
+                        + "deadline Submit report /by 2026-10-02 1800\n"
+                        + "event Team lunch /from 2026-10-04 1200 /to 2026-10-04 1330\n"
+                        + "mark 1  •  unmark 1  •  delete 1\n"
+                        + "find report  •  list  •  sort", arnImage));
+        userInput.requestFocus();
+    }
+
+    private void submitCommand(String rawInput) {
+        String input = rawInput == null ? "" : rawInput.trim();
+        if (input.isEmpty()) {
+            taskCountLabel.setText("Type a command to get started");
+            userInput.requestFocus();
+            return;
+        }
+
         String response = arn.getResponse(input);
         dialogContainer.getChildren().addAll(
                 DialogBox.getUserDialog(input, userImage),
-                DialogBox.getArnDialog(response, arnImage)
+                response.startsWith("Error:")
+                        ? DialogBox.getErrorDialog(response, arnImage)
+                        : DialogBox.getArnDialog(response, arnImage)
         );
         userInput.clear();
+        updateTaskCount();
+        userInput.requestFocus();
+    }
+
+    private void updateTaskCount() {
+        int taskCount = arn.getTaskCount();
+        taskCountLabel.setText(taskCount + (taskCount == 1 ? " task" : " tasks") + " saved locally");
     }
 }

@@ -1,0 +1,186 @@
+.root {
+    -arn-ink: #172033;
+    -arn-muted: #6b7280;
+    -arn-blue: #155eef;
+    -arn-blue-dark: #0b4dd8;
+    -arn-soft-blue: #eaf2ff;
+    -arn-surface: #ffffff;
+    -arn-canvas: #f4f7fb;
+    -arn-line: #dde5ef;
+    -fx-font-family: "Segoe UI", "Inter", sans-serif;
+}
+
+.app-root {
+    -fx-background-color: -arn-canvas;
+}
+
+.app-header {
+    -fx-background-color: linear-gradient(to right, #0a3d91, #155eef);
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.18), 16, 0.15, 0, 4);
+}
+
+.app-title {
+    -fx-font-size: 24px;
+    -fx-font-weight: 800;
+    -fx-text-fill: white;
+}
+
+.app-subtitle {
+    -fx-font-size: 12px;
+    -fx-text-fill: rgba(255, 255, 255, 0.78);
+}
+
+.status-pill {
+    -fx-background-color: rgba(255, 255, 255, 0.16);
+    -fx-background-radius: 999px;
+    -fx-padding: 5px 10px;
+    -fx-font-size: 9px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #bfffd8;
+}
+
+.task-count {
+    -fx-font-size: 11px;
+    -fx-text-fill: rgba(255, 255, 255, 0.78);
+}
+
+.quick-actions {
+    -fx-background-color: -arn-surface;
+    -fx-border-color: transparent transparent -arn-line transparent;
+}
+
+.quick-label {
+    -fx-padding: 0 4px 0 0;
+    -fx-font-size: 9px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #8a94a6;
+}
+
+.action-chip {
+    -fx-background-color: #f3f6fa;
+    -fx-background-radius: 999px;
+    -fx-border-color: #dce4ef;
+    -fx-border-radius: 999px;
+    -fx-cursor: hand;
+    -fx-font-size: 11px;
+    -fx-font-weight: 600;
+    -fx-padding: 7px 12px;
+    -fx-text-fill: #344054;
+}
+
+.action-chip:hover {
+    -fx-background-color: -arn-soft-blue;
+    -fx-border-color: #b8cff8;
+    -fx-text-fill: -arn-blue-dark;
+}
+
+.conversation-scroll,
+.conversation-scroll > .viewport,
+.conversation {
+    -fx-background-color: -arn-canvas;
+}
+
+.conversation-scroll {
+    -fx-border-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+.conversation-scroll .scroll-bar:vertical {
+    -fx-pref-width: 8px;
+    -fx-background-color: transparent;
+}
+
+.conversation-scroll .thumb {
+    -fx-background-color: #c8d2e1;
+    -fx-background-radius: 999px;
+}
+
+.dialog-box {
+    -fx-padding: 5px 0;
+}
+
+.message-bubble {
+    -fx-background-radius: 16px;
+    -fx-font-size: 13px;
+    -fx-line-spacing: 2px;
+    -fx-padding: 12px 15px;
+}
+
+.user-dialog .message-bubble {
+    -fx-background-color: linear-gradient(to bottom right, #246bfd, #155eef);
+    -fx-background-radius: 16px 16px 4px 16px;
+    -fx-effect: dropshadow(gaussian, rgba(21, 94, 239, 0.18), 10, 0.08, 0, 3);
+    -fx-text-fill: white;
+}
+
+.arn-dialog .message-bubble {
+    -fx-background-color: -arn-surface;
+    -fx-background-radius: 16px 16px 16px 4px;
+    -fx-border-color: -arn-line;
+    -fx-border-radius: 16px 16px 16px 4px;
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.06), 10, 0.08, 0, 2);
+    -fx-text-fill: -arn-ink;
+}
+
+.error-dialog .message-bubble {
+    -fx-background-color: #fff1f2;
+    -fx-background-radius: 16px 16px 16px 4px;
+    -fx-border-color: #fecdd3;
+    -fx-border-radius: 16px 16px 16px 4px;
+    -fx-text-fill: #9f1239;
+}
+
+.avatar {
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.12), 7, 0.1, 0, 2);
+}
+
+.composer-area {
+    -fx-background-color: -arn-surface;
+    -fx-border-color: -arn-line transparent transparent transparent;
+}
+
+.composer {
+    -fx-background-color: #f8fafc;
+    -fx-background-radius: 13px;
+    -fx-border-color: #d5deea;
+    -fx-border-radius: 13px;
+    -fx-padding: 6px;
+}
+
+.command-input {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-font-size: 13px;
+    -fx-padding: 9px 10px;
+    -fx-prompt-text-fill: #98a2b3;
+    -fx-text-fill: -arn-ink;
+}
+
+.command-input:focused {
+    -fx-background-color: transparent;
+}
+
+.send-button {
+    -fx-background-color: -arn-blue;
+    -fx-background-radius: 9px;
+    -fx-cursor: hand;
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+    -fx-padding: 10px 18px;
+    -fx-text-fill: white;
+}
+
+.send-button:hover {
+    -fx-background-color: -arn-blue-dark;
+}
+
+.send-button:pressed {
+    -fx-translate-y: 1px;
+}
+
+.input-hint {
+    -fx-alignment: center;
+    -fx-font-size: 10px;
+    -fx-text-fill: #8a94a6;
+}
