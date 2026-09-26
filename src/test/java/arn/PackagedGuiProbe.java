@@ -10,6 +10,8 @@ import javax.imageio.ImageIO;
 import javafx.animation.PauseTransition;
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.geometry.Bounds;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
@@ -72,19 +74,38 @@ public final class PackagedGuiProbe {
                         "Desktop command was not saved");
                 Path output = Path.of(getParameters().getRaw().get(0));
                 Files.createDirectories(output);
-                snapshot(stage, output.resolve("desktop.png"));
-                stage.setWidth(560);
-                stage.setHeight(640);
-                Platform.runLater(() -> {
-                    try {
-                        snapshot(stage, output.resolve("desktop-small.png"));
-                        verifyFarewell(stage, output);
-                    } catch (Throwable error) {
-                        failure = error;
-                        stage.close();
-                        Platform.exit();
-                    }
-                });
+                // Let the submitted response finish scrolling before checking its visible bounds.
+                Platform.runLater(() -> verifyLayout(stage, output, false));
+            } catch (Throwable error) {
+                failure = error;
+                stage.close();
+                Platform.exit();
+            }
+        }
+
+        private void verifyLayout(Stage stage, Path output, boolean smallWindow) {
+            try {
+                snapshot(stage, output.resolve(smallWindow ? "desktop-small.png" : "desktop.png"));
+                VBox conversation = (VBox) stage.getScene().lookup("#dialogContainer");
+                Node response = conversation.getChildren().get(conversation.getChildren().size() - 1);
+                Node viewport = stage.getScene().lookup(".conversation-scroll .viewport");
+                Bounds messageBounds = response.localToScene(response.getLayoutBounds());
+                Bounds visibleBounds = viewport.localToScene(viewport.getLayoutBounds());
+                require(messageBounds.getMinY() >= visibleBounds.getMinY() - 1
+                                && messageBounds.getMaxY() <= visibleBounds.getMaxY() + 1,
+                        "The latest error is outside the visible conversation");
+                if (smallWindow) {
+                    verifyFarewell(stage, output);
+                } else {
+                    stage.setWidth(560);
+                    stage.setHeight(640);
+                    Platform.runLater(() -> {
+                        TextField input = (TextField) stage.getScene().lookup("#userInput");
+                        input.setText("event Meeting /from 2026-10-01 /to 2026-10-02 1200");
+                        ((Button) stage.getScene().lookup("#sendButton")).fire();
+                        Platform.runLater(() -> verifyLayout(stage, output, true));
+                    });
+                }
             } catch (Throwable error) {
                 failure = error;
                 stage.close();

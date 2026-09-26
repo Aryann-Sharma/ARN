@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Keep new responses visible by updating message layout before scrolling, including wrapped errors in long conversations.
 - Edit task descriptions without changing their type, position, completion status, or dates.
 - Reschedule deadlines and events with the existing date formats and validation rules.
 - Undo up to 100 saved changes in the current session, including additions, deletions, marking, editing, and rescheduling.

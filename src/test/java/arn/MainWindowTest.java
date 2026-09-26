@@ -234,6 +234,49 @@ public class MainWindowTest {
     }
 
     @Test
+    public void wrappedErrorsStayVisibleAfterTheConversationGrows(@TempDir Path tempDir) throws Exception {
+        for (int width : new int[]{700, 560}) {
+            WindowFixture window = runOnFxThread(() -> {
+                WindowFixture result = createWindow(tempDir.resolve("width-" + width));
+                result.root.resize(width, 640);
+                for (int i = 0; i < 8; i++) {
+                    result.controller.examplesButton.fire();
+                }
+                result.root.applyCss();
+                result.root.layout();
+                return result;
+            });
+            for (double startingPosition : new double[]{1.0, 0.25, 1.0}) {
+                runOnFxThread(() -> {
+                    window.controller.scrollPane.setVvalue(startingPosition);
+                    window.root.layout();
+                    window.controller.userInput.setText("event Meeting /from 2026-10-01 /to 2026-10-02 1200");
+                    window.controller.sendButton.fire();
+                    return null;
+                });
+                runOnFxThread(() -> {
+                    window.root.applyCss();
+                    window.root.layout();
+                    MainWindow controller = window.controller;
+                    DialogBox response = (DialogBox) controller.dialogContainer.getChildren()
+                            .get(controller.dialogContainer.getChildren().size() - 1);
+                    javafx.scene.Node viewport = controller.scrollPane.lookup(".viewport");
+                    javafx.geometry.Bounds visible = viewport.localToScene(viewport.getLayoutBounds());
+                    javafx.geometry.Bounds message = response.localToScene(response.getLayoutBounds());
+                    assertTrue(response.getStyleClass().contains("error-dialog"));
+                    assertTrue(message.getMinY() >= visible.getMinY() - 1,
+                            "The start of the error should be visible");
+                    assertTrue(message.getMaxY() <= visible.getMaxY() + 1,
+                            "The end of the error should be visible after layout at width " + width
+                                    + ": message bottom=" + message.getMaxY() + ", viewport bottom="
+                                    + visible.getMaxY());
+                    return null;
+                });
+            }
+        }
+    }
+
+    @Test
     public void longMessagesWrapWithinNarrowWindow(@TempDir Path tempDir) throws Exception {
         runOnFxThread(() -> {
             WindowFixture window = createWindow(tempDir);

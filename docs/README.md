@@ -20,7 +20,7 @@ Type in the input field and press **Enter** or select **Send**. The quick action
 - **By date** runs `sort`.
 - **Examples** shows sample commands.
 
-The header shows how many tasks are saved. Quick actions preserve your unfinished input. If a command fails, its text stays in the input field so you can correct or retry it. Empty input does not change the task count. New messages scroll into view; resizing the window while reading older messages does not force you to the bottom.
+The header shows how many tasks are saved. Quick actions preserve your unfinished input. If a command fails, its text stays in the input field so you can correct or retry it. Empty input does not change the task count. New responses, including wrapped error messages, scroll into view automatically. Resizing the window while reading older messages does not force you to the bottom.
 
 ## Command and date rules
 
