@@ -3,6 +3,7 @@ package arn;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
@@ -140,8 +141,14 @@ public class MainWindow extends AnchorPane {
 
     private void addDialogs(DialogBox... dialogs) {
         dialogContainer.getChildren().addAll(dialogs);
-        // Scroll only for new messages so resizing does not interrupt reading older ones.
-        Platform.runLater(() -> scrollPane.setVvalue(1.0));
+        Platform.runLater(() -> {
+            // Wrapped messages need their final height before the scroll position is set.
+            Parent root = scrollPane.getScene() == null ? scrollPane : scrollPane.getScene().getRoot();
+            root.applyCss();
+            root.layout();
+            // Scroll only for new messages so resizing does not interrupt reading older ones.
+            scrollPane.setVvalue(scrollPane.getVmax());
+        });
     }
 
     private void updateTaskCount() {
