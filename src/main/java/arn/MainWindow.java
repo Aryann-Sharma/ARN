@@ -81,6 +81,8 @@ public class MainWindow extends AnchorPane {
                         + "edit 1 Read chapter two\n"
                         + "reschedule 2 /by 2026-10-05 1800\n"
                         + "reschedule 3 /from 2026-10-05 1200 /to 2026-10-05 1330\n"
+                        + "reschedule 3 /from 2026-10-05  •  reschedule 3 /to 2026-10-06\n"
+                        + "For events, omitted endpoints stay unchanged; dates without times keep existing times.\n"
                         + "undo (last saved change in this session)\n"
                         + "find report  •  list  •  sort", arnImage));
         userInput.requestFocus();

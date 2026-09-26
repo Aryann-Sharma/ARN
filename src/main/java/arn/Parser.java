@@ -216,19 +216,10 @@ public final class Parser {
             }
             replacement = updated;
         } else if (task instanceof Event event) {
-            int from = requireClause(dates, FROM_CLAUSE, "/from", 0, RESCHEDULE_EVENT_EXAMPLE);
-            if (from != 0) {
-                throw new ArnException("Put '/from' immediately after the task number, followed by '/to'. Example: "
-                        + RESCHEDULE_EVENT_EXAMPLE);
-            }
-            int to = requireClause(dates, TO_CLAUSE, "/to", 5, RESCHEDULE_EVENT_EXAMPLE);
-            rejectRepeatedClause(dates, FROM_CLAUSE, "/from", from, RESCHEDULE_EVENT_EXAMPLE);
-            rejectRepeatedClause(dates, TO_CLAUSE, "/to", to, RESCHEDULE_EVENT_EXAMPLE);
-            Event updated = new Event(task.getDescription(), dates.substring(5, to).strip(),
-                    dates.substring(to + 3).strip());
+            Event updated = rescheduleEvent(event, dates);
             if (updated.formatStartDate(false).equals(event.formatStartDate(false))
                     && updated.formatEndDate(false).equals(event.formatEndDate(false))) {
-                ui.displayMsg("The event dates are unchanged.");
+                ui.displayMsg("The event dates are unchanged:\n" + (index + 1) + ". " + event);
                 return;
             }
             replacement = updated;
@@ -237,6 +228,41 @@ public final class Parser {
         }
         taskList.replace(index, replacement);
         ui.displayMsg("Task rescheduled:\n" + (index + 1) + ". " + replacement);
+    }
+
+    private Event rescheduleEvent(Event event, String dates) throws ArnException {
+        int from = findClause(dates, FROM_CLAUSE, 0);
+        int to = findClause(dates, TO_CLAUSE, 0);
+        if (from != 0 && to != 0) {
+            throw new ArnException("After the task number, use '/from' and a start date, '/to' and an end date, "
+                    + "or both. Keep spaces around the markers. Example: reschedule 1 /from 2026-10-05");
+        }
+        if (from >= 0) {
+            rejectRepeatedClause(dates, FROM_CLAUSE, "/from", from, RESCHEDULE_EVENT_EXAMPLE);
+        }
+        if (to >= 0) {
+            rejectRepeatedClause(dates, TO_CLAUSE, "/to", to, RESCHEDULE_EVENT_EXAMPLE);
+        }
+        if (from >= 0 && to >= 0 && to < from) {
+            throw new ArnException("When changing both dates, put '/from' before '/to'. Example: "
+                    + RESCHEDULE_EVENT_EXAMPLE);
+        }
+        String start = from < 0 ? null : dates.substring(from + 5, to < 0 ? dates.length() : to).strip();
+        String end = to < 0 ? null : dates.substring(to + 3).strip();
+        if (start != null && start.isEmpty()) {
+            throw new ArnException("Add a start date after '/from', or omit '/from' to keep the current start. "
+                    + "Example: reschedule 1 /from 2026-10-05");
+        }
+        if (end != null && end.isEmpty()) {
+            throw new ArnException("Add an end date after '/to', or omit '/to' to keep the current end. "
+                    + "Example: reschedule 1 /to 2026-10-06");
+        }
+        try {
+            return event.reschedule(start, end);
+        } catch (ArnException e) {
+            throw new ArnException(e.getMessage() + " Omitted endpoints stay unchanged, and date-only updates "
+                    + "keep existing times. To change both endpoints, supply both '/from' and '/to'.");
+        }
     }
 
     private void find(String input) throws ArnException {

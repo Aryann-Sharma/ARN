@@ -43,6 +43,7 @@ See the [user guide](docs/README.md) for command examples and help with save fil
 | Edit a description | `edit 1 Read chapter two` |
 | Reschedule a deadline | `reschedule 2 /by 2026-10-05 1800` |
 | Reschedule an event | `reschedule 3 /from 2026-10-05 1200 /to 2026-10-05 1330` |
+| Change only an event's end | `reschedule 3 /to 2026-10-06` |
 | Undo the last saved change | `undo` |
 | Search descriptions | `find report` |
 | Show dated tasks chronologically | `sort` |
@@ -52,7 +53,9 @@ Command names are lowercase and case-sensitive; searches ignore letter case. Dat
 
 `find` and `sort` use the current task numbers from `list`, so you can use those numbers with `mark`, `unmark`, `delete`, `edit`, and `reschedule`. These views do not change the list order. Deleting a task renumbers the tasks after it.
 
-`edit` changes only the description. `reschedule` changes a deadline's due date or both dates of an event. Both preserve the task's number, type, and completion status. Todos have no date to reschedule.
+`edit` changes only the description. `reschedule` changes a deadline's due date or either or both endpoints of an event. Both preserve the task's number, type, and completion status. Todos have no date to reschedule.
+
+**When rescheduling an event, an omitted endpoint stays unchanged, and a date without a time keeps that endpoint's existing time.** For example, changing a start of `2026-10-05 1400` with `/from 2026-10-06` gives `2026-10-06 1400`. Supplying a time replaces it. This applies whether you supply one marker or both. The response shows the complete resulting event, and invalid ranges are rejected. See the [user guide](docs/README.md#edit-and-reschedule-tasks) for examples and date-only events.
 
 `undo` restores the state before the last saved change, including additions, deletions, marking, editing, and rescheduling. Repeat it to undo up to 100 changes from the current session. Viewing tasks, failed commands, and unchanged values do not add undo entries. History is cleared when Arn restarts; there is no redo command. An undo is saved like any other change, and a failed save leaves it available to retry.
 

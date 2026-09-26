@@ -66,6 +66,15 @@ final class TaskDate {
         return value;
     }
 
+    /** Changes the date, retaining an existing time when the input omits one. */
+    TaskDate reschedule(String input, String field) throws ArnException {
+        TaskDate replacement = parse(input, field);
+        if (hasTime && !replacement.hasTime) {
+            return new TaskDate(replacement.value.toLocalDate().atTime(value.toLocalTime()), true);
+        }
+        return replacement;
+    }
+
     boolean hasTime() {
         return hasTime;
     }

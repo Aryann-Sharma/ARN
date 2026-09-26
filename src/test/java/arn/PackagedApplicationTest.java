@@ -86,6 +86,23 @@ public class PackagedApplicationTest {
     }
 
     @Test
+    public void packagedPartialRescheduleRetainsTimesAcrossRestarts(@TempDir Path directory) throws Exception {
+        Result first = run(directory, "event Trip /from 2026-10-02 0000 /to 2026-10-04 1600\nmark 1\n"
+                + "reschedule 1 /from 2026-10-03\nreschedule 1 /to 2026-10-05\nbye\n", "--cli");
+        assertEquals(0, first.exitCode(), first.output());
+        assertFalse(first.output().contains("Error:"), first.output());
+        assertTrue(first.output().contains("from Oct 3 2026, 12:00AM to Oct 5 2026, 4:00PM"), first.output());
+
+        Result second = run(directory, "list\nreschedule 1 /to 2026-10-06\nundo\nlist\nbye\n", "--cli");
+        assertEquals(0, second.exitCode(), second.output());
+        assertFalse(second.output().contains("Error:"), second.output());
+        assertTrue(second.output().contains("1. [E][X] Trip (from Oct 3 2026, 12:00AM to Oct 5 2026, 4:00PM)"),
+                second.output());
+        assertTrue(Files.readString(directory.resolve("data/arn.txt"))
+                .contains("E | 1 | Trip | 2026-10-03 0000 | 2026-10-05 1600"));
+    }
+
+    @Test
     public void malformedSaveStopsConsoleWithoutOverwritingData(@TempDir Path directory) throws Exception {
         Path saveFile = directory.resolve("data/arn.txt");
         Files.createDirectories(saveFile.getParent());

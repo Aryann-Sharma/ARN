@@ -59,8 +59,8 @@ public class EditingTest {
         assertEquals("2026-10-05 0000", ((Deadline) tasks.get(1)).formatDate(false));
         assertEquals("Meeting", tasks.get(2).getDescription());
         assertTrue(tasks.get(2).isDone());
-        assertEquals("2026-10-06", ((Event) tasks.get(2)).formatStartDate(false));
-        assertEquals("2026-10-07", ((Event) tasks.get(2)).formatEndDate(false));
+        assertEquals("2026-10-06 1200", ((Event) tasks.get(2)).formatStartDate(false));
+        assertEquals("2026-10-07 1300", ((Event) tasks.get(2)).formatEndDate(false));
         assertEquals(3, tasks.size());
     }
 
@@ -77,7 +77,7 @@ public class EditingTest {
                 "reschedule 2 extra /by 2026-10-02", "reschedule 2 /by 2026-02-30",
                 "reschedule 2 /by 2026-10-02 2400", "reschedule 2 /by 2026-10-02 /by 2026-10-03",
                 "reschedule 2 /from 2026-10-02 /to 2026-10-03", "reschedule 3 /by 2026-10-02",
-                "reschedule 3 /from 2026-10-03", "reschedule 3 /from /to 2026-10-04",
+                "reschedule 3 /from", "reschedule 3 /from /to 2026-10-04",
                 "reschedule 3 /from 2026-10-03 /to", "reschedule 3 /from 2026-10-03 /to 2026-10-02",
                 "reschedule 3 /from 2026-10-03 /to 2026-10-04 1200",
                 "reschedule 3 /to 2026-10-04 /from 2026-10-03",

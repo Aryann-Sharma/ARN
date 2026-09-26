@@ -133,6 +133,35 @@ public class MainWindowTest {
     }
 
     @Test
+    public void partialRescheduleShowsRetainedTimesAndCanBeUndone(@TempDir Path tempDir) throws Exception {
+        runOnFxThread(() -> {
+            WindowFixture window = createWindow(tempDir);
+            MainWindow controller = window.controller;
+            controller.userInput.setText("event Trip /from 2026-10-02 0000 /to 2026-10-04 1600");
+            controller.sendButton.fire();
+            controller.userInput.setText("reschedule 1 /from 2026-10-03");
+            controller.sendButton.fire();
+            assertEquals("", controller.userInput.getText());
+            DialogBox response = (DialogBox) controller.dialogContainer.getChildren()
+                    .get(controller.dialogContainer.getChildren().size() - 1);
+            assertEquals("Task rescheduled:\n1. [E][ ] Trip (from Oct 3 2026, 12:00AM to Oct 4 2026, 4:00PM)",
+                    response.dialog.getText());
+
+            controller.userInput.setText("reschedule 1 /to 2026-10-01");
+            controller.sendButton.fire();
+            assertEquals("reschedule 1 /to 2026-10-01", controller.userInput.getText());
+            controller.userInput.setText("undo");
+            controller.sendButton.fire();
+            Arn reopened = new Arn();
+            reopened.initialize(new TaskFileHandler(tempDir.resolve("arn.txt")));
+            assertEquals("1. [E][ ] Trip (from Oct 2 2026, 12:00AM to Oct 4 2026, 4:00PM)",
+                    reopened.getResponse("list"));
+            assertEquals("1 task saved locally", controller.taskCountLabel.getText());
+            return null;
+        });
+    }
+
+    @Test
     public void saveFailureIsShownAndUnsavedChangeIsRolledBack(@TempDir Path tempDir) throws Exception {
         runOnFxThread(() -> {
             Arn arn = createTestArn(tempDir);

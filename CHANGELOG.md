@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Reschedule an event's start or end independently, retaining the omitted endpoint.
+- Retain existing event times when rescheduling with date-only values, including when both endpoints are supplied; show the full resulting range in responses.
+- Document retained times and validate the complete event before saving or adding undo history.
 - Edit task descriptions without changing their type, position, completion status, or dates.
 - Reschedule deadlines and events with the existing date formats and validation rules.
 - Undo up to 100 saved changes in the current session, including additions, deletions, marking, editing, and rescheduling.
