@@ -1,18 +1,14 @@
 package arn;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 
 /**
  * Represents a task of type Event with a description, a start date, and end date.
  *
  */
 public final class Event extends Task {
-    private LocalDateTime startDate;
-    private LocalDateTime endDate;
-    private boolean hasTime = true;
+    private final TaskDate startDate;
+    private final TaskDate endDate;
 
 
     /**
@@ -26,25 +22,13 @@ public final class Event extends Task {
      */
     public Event(String description, String startDate, String endDate) throws ArnException {
         super(description);
-        DateTimeFormatter dateTimeFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HHmm");
-        DateTimeFormatter dateFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-
-        try {
-            this.startDate = LocalDateTime.parse(startDate, dateTimeFmt);
-            this.endDate = LocalDateTime.parse(endDate, dateTimeFmt);
-        } catch (DateTimeParseException e1) {
-            try {
-                LocalDate d1 = LocalDate.parse(startDate, dateFmt);
-                this.startDate = d1.atStartOfDay();
-                LocalDate d2 = LocalDate.parse(endDate, dateFmt);
-                this.endDate = d2.atStartOfDay();
-                this.hasTime = false;
-            } catch (DateTimeParseException e2) {
-                throw new ArnException("Invalid date format. Use YYYY-MM-DD or YYYY-MM-DD HHMM.");
-            }
+        this.startDate = TaskDate.parse(startDate);
+        this.endDate = TaskDate.parse(endDate);
+        if (this.startDate.hasTime() != this.endDate.hasTime()) {
+            throw new ArnException("Event start and end must both include a time or both omit it.");
         }
 
-        if (this.endDate.isBefore(this.startDate)) {
+        if (this.endDate.getValue().isBefore(this.startDate.getValue())) {
             throw new ArnException("Event end date must not be before its start date.");
         }
     }
@@ -54,37 +38,21 @@ public final class Event extends Task {
     }
 
     public String formatStartDate(boolean pretty) {
-        if (pretty) {
-            return hasTime
-                    ? startDate.format(DateTimeFormatter.ofPattern("MMM d yyyy, h:mma"))
-                    : startDate.toLocalDate().format(DateTimeFormatter.ofPattern("MMM d yyyy"));
-        } else {
-            return hasTime
-                    ? startDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HHmm"))
-                    : startDate.toLocalDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-        }
+        return startDate.format(pretty);
     }
 
     public String formatEndDate(boolean pretty) {
-        if (pretty) {
-            return hasTime
-                    ? endDate.format(DateTimeFormatter.ofPattern("MMM d yyyy, h:mma"))
-                    : endDate.toLocalDate().format(DateTimeFormatter.ofPattern("MMM d yyyy"));
-        } else {
-            return hasTime
-                    ? endDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HHmm"))
-                    : endDate.toLocalDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-        }
+        return endDate.format(pretty);
     }
 
     @Override
     public LocalDateTime getDate() {
-        return this.startDate;
+        return startDate.getValue();
     }
 
     @Override
     public String toString() {
-        return "[" + this.getType() + "][" + this.getStatusIcon() + "] " + getDescription() + " (from " +
-                this.formatStartDate(true) + " to " + this.formatEndDate(true) + ")";
+        return "[" + this.getType() + "][" + this.getStatusIcon() + "] " + getDescription()
+                + " (from " + this.formatStartDate(true) + " to " + this.formatEndDate(true) + ")";
     }
 }

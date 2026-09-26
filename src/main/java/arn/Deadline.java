@@ -1,9 +1,6 @@
 package arn;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 
 /**
  * Represents a type of task that has
@@ -11,8 +8,7 @@ import java.time.format.DateTimeParseException;
  */
 
 public final class Deadline extends Task {
-    private LocalDateTime date;
-    private boolean hasTime = true;
+    private final TaskDate date;
 
     /**
      * Constructs a Deadline with the given description and due date.
@@ -24,20 +20,7 @@ public final class Deadline extends Task {
      */
     public Deadline(String description, String date) throws ArnException {
         super(description);
-        DateTimeFormatter dateTimeFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HHmm");
-        DateTimeFormatter dateFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-
-        try {
-            this.date = LocalDateTime.parse(date, dateTimeFmt);
-        } catch (DateTimeParseException e1) {
-            try {
-                LocalDate d = LocalDate.parse(date, dateFmt);
-                this.date = d.atStartOfDay();
-                this.hasTime = false;
-            } catch (DateTimeParseException e2) {
-                throw new ArnException("Invalid date format. Use YYYY-MM-DD or YYYY-MM-DD HHMM.");
-            }
-        }
+        this.date = TaskDate.parse(date);
     }
 
     public String getType() {
@@ -53,28 +36,17 @@ public final class Deadline extends Task {
      * @return formatted date as a string
      */
     public String formatDate(boolean pretty) {
-        if (date == null) {
-            return "";
-        }
-        if (pretty) {
-            return hasTime
-                    ? date.format(DateTimeFormatter.ofPattern("MMM d yyyy, h:mma"))
-                    : date.toLocalDate().format(DateTimeFormatter.ofPattern("MMM d yyyy"));
-        } else {
-            return hasTime
-                    ? date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HHmm"))
-                    : date.toLocalDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-        }
+        return date.format(pretty);
     }
 
     @Override
     public LocalDateTime getDate() {
-        return this.date;
+        return date.getValue();
     }
 
     @Override
     public String toString() {
-        return "[" + this.getType() + "][" + this.getStatusIcon() + "] " + getDescription() + " (by " +
-                this.formatDate(true) + ")";
+        return "[" + this.getType() + "][" + this.getStatusIcon() + "] " + getDescription()
+                + " (by " + this.formatDate(true) + ")";
     }
 }

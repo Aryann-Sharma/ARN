@@ -1,4 +1,5 @@
 package arn;
+
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -28,14 +29,14 @@ public class MainWindow extends AnchorPane {
 
     @FXML
     public void initialize() {
-        dialogContainer.heightProperty().addListener((observable, oldHeight, newHeight) ->
-                scrollPane.setVvalue(1.0));
+        userInput.setAccessibleText("Command");
+        userInput.setAccessibleHelp("Type a command and press Enter to send it. Use Examples for command syntax.");
     }
 
     public void setArn(Arn a) {
         arn = a;
         updateTaskCount();
-        dialogContainer.getChildren().add(DialogBox.getArnDialog(
+        addDialogs(DialogBox.getArnDialog(
                 "Hi, I'm Arn. I can help you capture todos, track deadlines, and plan events. "
                         + "Try a quick action above or type a command below.", arnImage));
         Platform.runLater(userInput::requestFocus);
@@ -43,22 +44,22 @@ public class MainWindow extends AnchorPane {
 
     @FXML
     private void handleUserInput() {
-        submitCommand(userInput.getText());
+        submitCommand(userInput.getText(), true);
     }
 
     @FXML
     private void handleListTasks() {
-        submitCommand("list");
+        submitCommand("list", false);
     }
 
     @FXML
     private void handleSortByDate() {
-        submitCommand("sort");
+        submitCommand("sort", false);
     }
 
     @FXML
     private void handleShowExamples() {
-        dialogContainer.getChildren().add(DialogBox.getArnDialog(
+        addDialogs(DialogBox.getArnDialog(
                 "Here are a few things you can ask me:\n\n"
                         + "todo Read a chapter\n"
                         + "deadline Submit report /by 2026-10-02 1800\n"
@@ -68,24 +69,32 @@ public class MainWindow extends AnchorPane {
         userInput.requestFocus();
     }
 
-    private void submitCommand(String rawInput) {
+    private void submitCommand(String rawInput, boolean clearInputOnSuccess) {
         String input = rawInput == null ? "" : rawInput.trim();
         if (input.isEmpty()) {
-            taskCountLabel.setText("Type a command to get started");
             userInput.requestFocus();
             return;
         }
 
         String response = arn.getResponse(input);
-        dialogContainer.getChildren().addAll(
+        boolean isError = response.startsWith("Error:");
+        addDialogs(
                 DialogBox.getUserDialog(input, userImage),
-                response.startsWith("Error:")
+                isError
                         ? DialogBox.getErrorDialog(response, arnImage)
                         : DialogBox.getArnDialog(response, arnImage)
         );
-        userInput.clear();
+        if (clearInputOnSuccess && !isError) {
+            userInput.clear();
+        }
         updateTaskCount();
         userInput.requestFocus();
+    }
+
+    private void addDialogs(DialogBox... dialogs) {
+        dialogContainer.getChildren().addAll(dialogs);
+        // Scroll only for new messages so resizing does not interrupt reading older ones.
+        Platform.runLater(() -> scrollPane.setVvalue(1.0));
     }
 
     private void updateTaskCount() {

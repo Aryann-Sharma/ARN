@@ -1,34 +1,50 @@
 package arn;
 
+import java.io.InputStream;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
-public class Ui {
-    private final Scanner scanner;
+public class Ui implements AutoCloseable {
+    private final InputStream input;
+    private final PrintStream output;
+    private Scanner scanner;
 
     public Ui() {
-        scanner = new Scanner(System.in);
+        this(System.in, new PrintStream(System.out, true, StandardCharsets.UTF_8));
+    }
+
+    Ui(InputStream input, PrintStream output) {
+        this.input = input;
+        this.output = output;
     }
 
     public String readCommand() {
-        System.out.print("-> ");
-        return scanner.nextLine();
+        if (scanner == null) {
+            scanner = new Scanner(input, StandardCharsets.UTF_8);
+        }
+        output.print("-> ");
+        return scanner.hasNextLine() ? scanner.nextLine() : null;
     }
 
     public void displayGreet() {
-        System.out.println("Hello! I'm Arn");
-        System.out.println("What can I do for you?");
-        System.out.print("\n");
+        displayMsg("Hello! I'm Arn");
+        displayMsg("What can I do for you?");
+        displayMsg("");
     }
 
     public void displayBye() {
-        System.out.println("Bye. Hope to see you again soon!");
+        displayMsg("Bye. Hope to see you again soon!");
     }
 
     public void displayMsg(String msg) {
-        System.out.println(msg);
+        output.println(msg);
     }
 
+    @Override
     public void close() {
-        scanner.close();
+        if (scanner != null) {
+            scanner.close();
+        }
     }
 }

@@ -1,177 +1,163 @@
 # Arn User Guide
 
-
 ![Arn logo](../src/main/resources/images/ArnLogo.png)
 
+Arn keeps todos, deadlines, and events in a local task list. You can use the desktop interface or enter the same commands in a terminal.
 
-Arn is a task management chatbot for capturing todos, tracking deadlines, and planning events from a focused desktop interface.
+## Getting started
 
-## Using the interface
+Download `Arn.jar` from the [releases page](https://github.com/Aryann-Sharma/ARN/releases). Install a 64-bit Java 17 runtime for x64 Windows, Linux, or Intel macOS, then open a terminal in the directory where you want your task data:
 
-Type a command in the input area and press **Enter** or select **Send**. The refreshed interface also includes:
-
-- **Show tasks** to run `list`
-- **By date** to run `sort`
-- **Examples** to display command suggestions
-- A live count of locally saved tasks
-- Distinct visual feedback for successful commands and errors
-
-Commands are case-sensitive and should be entered in lowercase. Dates use `YYYY-MM-DD` or `YYYY-MM-DD HHMM` in 24-hour time. For events, the start and end must both include a time or both omit it, and the end cannot be earlier than the start.
-
-## List
-
-list
-
-Lists all tasks in their saved order. Task numbers shown here are the numbers used by `mark`, `unmark`, and `delete`.
-
-Example: list
-
-
-```text
-1. [T][ ] gym
-2. [D][ ] insurance (by Jun 3 2025)
+```bash
+java -jar Arn.jar
 ```
 
-## Adding Todo tasks
+JavaFX is included in the JAR. Native ARM libraries are not included in this release.
 
-todo TASK
+Type in the input field and press **Enter** or select **Send**. The quick actions are:
 
-Adds a todo without an associated date.
+- **Show tasks** runs `list`.
+- **By date** runs `sort`.
+- **Examples** shows sample commands.
 
-Example: todo gym
+The header shows how many tasks are saved. Quick actions preserve your unfinished input. If a command fails, its text stays in the input field so you can correct or retry it. Empty input does not change the task count. New messages scroll into view; resizing the window while reading older messages does not force you to the bottom.
 
-```text
-added: [T][ ] gym
-```
+## Command and date rules
 
-## Adding Deadline tasks
+Enter one command at a time. Command names are case-sensitive and lowercase. Descriptions can contain spaces, Unicode text, and the `|` character. A description must not be empty.
 
-deadline TASK /by DATE
+Dates use exactly `YYYY-MM-DD` or `YYYY-MM-DD HHMM`, with zero-padded fields and 24-hour time. For example:
 
-Adds a task of type Deadline to list (i.e. task with a deadline).
-`DATE` uses `YYYY-MM-DD` or `YYYY-MM-DD HHMM`.
+| Accepted | Rejected |
+| --- | --- |
+| `2026-10-02` | `2026-2-2` |
+| `2026-10-02 1800` | `2026-10-02 18:00` |
+| `2028-02-29` | `2026-02-29` |
+| `2026-10-02 0000` | `2026-10-02 2400` |
 
-Example: deadline insurance /by 2025-06-03
+Dates must exist on the calendar. Midnight entered as `0000` remains a timed task when saved and reopened. Dates do not include a time zone.
 
-```text
-added: [D][ ] insurance (by Jun 3 2025)
-```
+## Add tasks
 
-Example: deadline assignment /by 2025-07-03 2359
-
-```text
-added: [D][ ] assignment (by Jul 3 2025, 11:59PM)
-```
-
-## Adding Event tasks
-
-event TASK /from START_DATE /to END_DATE
-
-Adds a task of type Event to list (i.e. task with start and end dates).
-`START_DATE` and `END_DATE` use `YYYY-MM-DD` or `YYYY-MM-DD HHMM`. Both values must use the same format.
-
-Example: event party /from 2025-05-02 /to 2025-05-03
+A todo has a description and no date:
 
 ```text
-added: [E][ ] party (from May 2 2025 to May 3 2025)
+todo Read a chapter
 ```
-
-Example: event meeting /from 2025-05-09 1600 /to 2025-05-09 1800
 
 ```text
-added: [E][ ] meeting (from May 9 2025, 4:00PM to May 9 2025, 6:00PM)
+added: [T][ ] Read a chapter
 ```
 
-## Marking tasks
-
-mark TASK_INDEX
-
-Marks a task in the list as "done". 
-TASK_INDEX is index of a particular task in list in the range 1..n (where n is number of tasks in the list)
-
-Example: mark 2
+A deadline has one due date:
 
 ```text
-Task marked as done:
-[D][X] insurance (by Jun 3 2025)
+deadline Submit report /by 2026-10-02 1800
 ```
-
-## Unmarking tasks
-
-unmark TASK_INDEX
-
-Marks a task in the list as "not done". 
-TASK_INDEX is index of a particular task in list in the range 1..n (where n is number of tasks in the list)
-
-Example: unmark 2
 
 ```text
-Task marked as not done:
-[D][ ] insurance (by Jun 3 2025)
+added: [D][ ] Submit report (by Oct 2 2026, 6:00PM)
 ```
 
-## Deleting tasks
-
-delete TASK_INDEX
-
-Deletes a task in the list.
-TASK_INDEX is index of a particular task in list in the range 1..n (where n is number of tasks in the list)
-
-Example: delete 2
+An event has a start and an end:
 
 ```text
-Task removed: [D][ ] insurance (by Jun 3 2025)
+event Team lunch /from 2026-10-04 1200 /to 2026-10-04 1330
 ```
 
-## Finding tasks
+```text
+added: [E][ ] Team lunch (from Oct 4 2026, 12:00PM to Oct 4 2026, 1:30PM)
+```
 
-find TASK_DESCRIPTION
+Both event dates must include a time or both omit it. The end must be equal to or later than the start. For a date-only event:
 
-Outputs a list of tasks that match the given description
+```text
+event Workshop /from 2026-10-05 /to 2026-10-06
+```
 
-Example: find meeting
+Keep a space around the date clauses, as shown above.
+
+## List and update tasks
+
+`list` displays every task in its saved order. After adding the first three examples above, the result is:
+
+```text
+1. [T][ ] Read a chapter
+2. [D][ ] Submit report (by Oct 2 2026, 6:00PM)
+3. [E][ ] Team lunch (from Oct 4 2026, 12:00PM to Oct 4 2026, 1:30PM)
+```
+
+`[T]`, `[D]`, and `[E]` identify todos, deadlines, and events. `[ ]` means incomplete and `[X]` means complete.
+
+Use the displayed number to update a task:
+
+| Command | Effect |
+| --- | --- |
+| `mark 2` | Mark Submit report complete |
+| `unmark 2` | Mark Submit report incomplete |
+| `delete 2` | Remove Submit report |
+
+Task numbers start at 1. Deleting a task shifts the numbers of later tasks, so use `list` to check the current numbering before another update.
+
+Marking an already completed task, or unmarking an already incomplete task, leaves the save file unchanged.
+
+## Find tasks
+
+`find KEYWORD` searches for text anywhere in a description, ignoring letter case:
+
+```text
+find REPORT
+```
 
 ```text
 Here are the matching tasks in your list:
-1. [E][ ] meeting (from May 9 2025, 4:00PM to May 9 2025, 6:00PM)
+2. [D][ ] Submit report (by Oct 2 2026, 6:00PM)
 ```
 
-## Sorting tasks by dates
+Search results keep the task numbers from `list`. In this example, use `mark 2` to complete the matching task.
 
-sort
+## View tasks by date
 
-Displays deadlines and events chronologically. Event tasks are ordered by their start date. Todo tasks are excluded. This command does not change the saved order used by `list`.
-
-Example: sort
+`sort` displays deadlines and events in chronological order. Events use their start date, and todos are excluded:
 
 ```text
-1. [E][ ] meeting (from May 9 2025, 4:00pm to May 9 2025, 6:00pm)
-2. [D][ ] insurance (by Jun 3 2025)
+2. [D][ ] Submit report (by Oct 2 2026, 6:00PM)
+3. [E][ ] Team lunch (from Oct 4 2026, 12:00PM to Oct 4 2026, 1:30PM)
 ```
 
-## Saying goodbye
+This view keeps the saved task numbers and does not change the order of `list`. Tasks with equal dates keep their relative order.
 
-`bye`
+## Console mode
 
-Displays Arn's farewell message:
-
-```text
-Bye. Hope to see you again soon!
+```bash
+java -jar Arn.jar --cli
 ```
 
-In the JavaFX application, close the window when you are finished.
+The console accepts the same commands, one per line. It exits on `bye` or end of input, so a UTF-8 command file can also be redirected into it. Use a UTF-8 terminal for non-ASCII text.
 
-## Task notation
+```bash
+java -jar Arn.jar --help
+java -jar Arn.jar --version
+```
 
-- `[T]`, `[D]`, and `[E]` identify todos, deadlines, and events.
-- `[ ]` means the task is incomplete.
-- `[X]` means the task is complete.
+`--help` prints the available options and `--version` prints the release version. An unknown option returns exit code 2. A startup failure caused by unreadable or malformed task data returns exit code 1.
 
-## Saving data
+In the desktop application, `bye` displays a farewell. Close the window to exit.
 
-Arn saves valid commands to `data/arn.txt`, relative to the directory from which the application is launched. The file is created automatically if it does not exist. Saves use UTF-8 and replace the data file only after a complete temporary copy has been written. Existing save files from earlier versions remain supported.
+## Saving and recovering data
 
-If Arn cannot load or save the file, it shows an error instead of silently losing the failure. A command that cannot be saved is rolled back in the current session.
+Arn saves tasks in `data/arn.txt`, relative to the directory from which it is launched. Launching the JAR from a different directory uses a different task file. The file is created on the first successful change; opening the app or using `list`, `find`, `sort`, or `bye` does not create or rewrite it.
 
+The save file is UTF-8 plain text with a version header. Older unversioned save files are supported. A save writes a complete temporary copy before replacing the active file, using atomic replacement where the file system supports it. The `arn.txt.lock` file can remain beside the save file after exit; this is normal.
 
+| Problem | What happens and how to recover |
+| --- | --- |
+| Invalid command or date | Arn shows an error and leaves your tasks unchanged. Correct the input and retry. |
+| Save fails | The change is rolled back. Check that the data directory is writable, then retry the retained command. |
+| Another instance is saving | The change is rejected. Wait for that save to finish and retry; a subsequent conflict may require a restart. |
+| The save file changed outside this session | Arn refuses to overwrite the newer data. Restart to load it before making changes. |
+| Saved data is malformed or unreadable | Startup stops and leaves the file intact. Make a backup, inspect the reported problem, and correct the file or restore a known good copy before restarting. |
 
+To back up or move your tasks, close Arn and copy `data/arn.txt`. Keep a backup before editing it manually. Task descriptions are not encrypted.
+
+See the [project README](../README.md) for build and test instructions and the [changelog](../CHANGELOG.md) for release changes.

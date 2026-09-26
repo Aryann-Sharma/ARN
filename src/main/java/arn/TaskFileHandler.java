@@ -1,14 +1,23 @@
 package arn;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.StringReader;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.nio.channels.OverlappingFileLockException;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Level;
@@ -23,6 +32,8 @@ public final class TaskFileHandler {
     private static final Logger LOGGER = Logger.getLogger(TaskFileHandler.class.getName());
 
     private final Path filePath;
+    private byte[] lastSavedData;
+    private boolean hasLoadedData;
 
     public TaskFileHandler(String filePath) {
         this(Path.of(filePath));
@@ -33,39 +44,59 @@ public final class TaskFileHandler {
     }
 
     /**
-     * Loads all valid tasks. Legacy files without a version header remain supported.
-     * Malformed records are skipped and logged with their line number.
+     * Loads tasks, including legacy files without a version header.
+     * Rejects malformed data so a later save cannot silently remove unread tasks.
      *
      * @return tasks loaded from storage
-     * @throws StorageException if the file itself cannot be read
+     * @throws StorageException if the file cannot be read or contains invalid data
      */
-    public List<Task> readTasks() throws StorageException {
+    public synchronized List<Task> readTasks() throws StorageException {
         List<Task> tasks = new ArrayList<>();
         try {
-            createParentDirectory();
-            if (Files.notExists(filePath)) {
-                Files.createFile(filePath);
+            byte[] savedData = readSavedData();
+            if (savedData == null) {
+                lastSavedData = null;
+                hasLoadedData = true;
                 return tasks;
             }
 
-            try (BufferedReader reader = Files.newBufferedReader(filePath, StandardCharsets.UTF_8)) {
+            String contents = StandardCharsets.UTF_8.newDecoder().decode(ByteBuffer.wrap(savedData)).toString();
+            if (contents.startsWith("\uFEFF")) {
+                contents = contents.substring(1);
+            }
+            try (BufferedReader reader = new BufferedReader(new StringReader(contents))) {
                 String line;
                 int lineNumber = 0;
+                boolean hasContent = false;
                 while ((line = reader.readLine()) != null) {
                     lineNumber++;
-                    if (line.isBlank() || line.equals(DATA_HEADER)) {
+                    if (line.isBlank()) {
                         continue;
                     }
+                    if (line.equals(DATA_HEADER) && !hasContent) {
+                        hasContent = true;
+                        continue;
+                    }
+                    if (line.startsWith("# Arn data")) {
+                        throw new StorageException("Unsupported or misplaced save format header at line "
+                                + lineNumber + ". Check the save file before restarting Arn.");
+                    }
+                    hasContent = true;
 
                     Task task = parseTask(line);
                     if (task == null) {
-                        LOGGER.warning("Skipped malformed task data at line " + lineNumber);
-                    } else {
-                        tasks.add(task);
+                        throw new StorageException("Invalid saved task at line " + lineNumber
+                                + ". Check the save file before restarting Arn.");
                     }
+                    tasks.add(task);
                 }
             }
+            lastSavedData = savedData;
+            hasLoadedData = true;
             return tasks;
+        } catch (CharacterCodingException e) {
+            throw new StorageException("Saved tasks contain invalid UTF-8 text. "
+                    + "Check the save file before restarting Arn.", e);
         } catch (IOException e) {
             LOGGER.log(Level.WARNING, "Unable to read task data from " + filePath, e);
             throw new StorageException("Could not read saved tasks.", e);
@@ -74,35 +105,77 @@ public final class TaskFileHandler {
 
     /**
      * Writes tasks to a temporary file before replacing the active save file.
+     * A lock and a comparison with the last loaded data prevent concurrent Arn
+     * instances from overwriting each other's changes.
      *
      * @param tasks tasks to persist
      * @throws StorageException if the data cannot be written safely
      */
-    public void writeTasks(List<Task> tasks) throws StorageException {
+    public synchronized void writeTasks(List<Task> tasks) throws StorageException {
         Objects.requireNonNull(tasks, "tasks");
         Path temporaryFile = null;
         try {
+            byte[] newData = serializeTasks(tasks);
             createParentDirectory();
-            Path parentDirectory = filePath.getParent();
-            temporaryFile = Files.createTempFile(parentDirectory, "arn-", ".tmp");
-
-            try (BufferedWriter writer = Files.newBufferedWriter(temporaryFile, StandardCharsets.UTF_8)) {
-                writer.write(DATA_HEADER);
-                writer.newLine();
-                for (Task task : tasks) {
-                    writer.write(serializeTask(task));
-                    writer.newLine();
+            Path lockPath = filePath.resolveSibling(filePath.getFileName() + ".lock");
+            try (FileChannel lockChannel = FileChannel.open(lockPath,
+                    StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+                    FileLock lock = lockChannel.tryLock()) {
+                if (lock == null) {
+                    throw new StorageException("Another instance is saving tasks. Please try again.");
                 }
+                checkForExternalChanges(readSavedData());
+                temporaryFile = Files.createTempFile(filePath.getParent(), "arn-", ".tmp");
+                try (FileChannel writer = FileChannel.open(temporaryFile, StandardOpenOption.WRITE)) {
+                    ByteBuffer buffer = ByteBuffer.wrap(newData);
+                    while (buffer.hasRemaining()) {
+                        writer.write(buffer);
+                    }
+                    writer.force(true);
+                }
+                checkForExternalChanges(readSavedData());
+                replaceSaveFile(temporaryFile);
+                temporaryFile = null;
+                lastSavedData = newData;
+                hasLoadedData = true;
             }
-
-            replaceSaveFile(temporaryFile);
-            temporaryFile = null;
+        } catch (OverlappingFileLockException e) {
+            throw new StorageException("Another instance is saving tasks. Please try again.", e);
         } catch (IOException e) {
             LOGGER.log(Level.WARNING, "Unable to write task data to " + filePath, e);
             throw new StorageException("Could not save tasks.", e);
         } finally {
             deleteTemporaryFile(temporaryFile);
         }
+    }
+
+    private byte[] readSavedData() throws IOException {
+        try {
+            return Files.readAllBytes(filePath);
+        } catch (NoSuchFileException e) {
+            return null;
+        }
+    }
+
+    private void checkForExternalChanges(byte[] savedData) throws StorageException {
+        if (!hasLoadedData && savedData != null && savedData.length > 0) {
+            throw new StorageException("Load saved tasks before replacing an existing save file.");
+        }
+        if (hasLoadedData && !Arrays.equals(lastSavedData, savedData)) {
+            throw new StorageException("Saved tasks changed outside this session. "
+                    + "Restart Arn to load the latest tasks before making changes.");
+        }
+    }
+
+    private byte[] serializeTasks(List<Task> tasks) throws IOException, StorageException {
+        StringBuilder contents = new StringBuilder(DATA_HEADER).append('\n');
+        for (Task task : tasks) {
+            contents.append(serializeTask(task)).append('\n');
+        }
+        ByteBuffer encoded = StandardCharsets.UTF_8.newEncoder().encode(CharBuffer.wrap(contents));
+        byte[] data = new byte[encoded.remaining()];
+        encoded.get(data);
+        return data;
     }
 
     private Task parseTask(String line) {
@@ -130,7 +203,7 @@ public final class TaskFileHandler {
                 task.markAsDone();
             }
             return task;
-        } catch (ArnException e) {
+        } catch (ArnException | IllegalArgumentException e) {
             return null;
         }
     }
@@ -176,7 +249,7 @@ public final class TaskFileHandler {
             }
             result.append(parts[i]);
         }
-        return result.toString().trim();
+        return result.toString().strip();
     }
 
     private void createParentDirectory() throws IOException {

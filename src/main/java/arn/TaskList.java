@@ -18,7 +18,7 @@ public final class TaskList {
      * @param taskList the list of tasks to initialize with
      */
     public TaskList(List<Task> taskList) {
-        this.taskList = new ArrayList<>(Objects.requireNonNull(taskList, "taskList"));
+        this.taskList = new ArrayList<>(List.copyOf(Objects.requireNonNull(taskList, "taskList")));
     }
 
     public List<Task> getTasks() {
