@@ -59,6 +59,18 @@ public final class TaskList {
         return taskList.remove(index);
     }
 
+    /** Replaces a task in place, retaining its completion status. */
+    public void replace(int index, Task replacement) throws ArnException {
+        Task previous = get(index);
+        Objects.requireNonNull(replacement, "Replacement task is required.");
+        if (previous.isDone()) {
+            replacement.markAsDone();
+        } else {
+            replacement.markAsNotDone();
+        }
+        taskList.set(index, replacement);
+    }
+
     private void validateIndex(int index) throws ArnException {
         if (index >= 0 && index < taskList.size()) {
             return;

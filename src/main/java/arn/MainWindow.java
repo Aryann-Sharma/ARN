@@ -78,6 +78,10 @@ public class MainWindow extends AnchorPane {
                         + "deadline Submit report /by 2026-10-02 1800\n"
                         + "event Team lunch /from 2026-10-04 1200 /to 2026-10-04 1330\n"
                         + "mark 1  •  unmark 1  •  delete 1\n"
+                        + "edit 1 Read chapter two\n"
+                        + "reschedule 2 /by 2026-10-05 1800\n"
+                        + "reschedule 3 /from 2026-10-05 1200 /to 2026-10-05 1330\n"
+                        + "undo (last saved change in this session)\n"
                         + "find report  •  list  •  sort", arnImage));
         userInput.requestFocus();
     }

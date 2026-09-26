@@ -40,13 +40,21 @@ See the [user guide](docs/README.md) for command examples and help with save fil
 | Show tasks | `list` |
 | Mark complete or incomplete | `mark 1`, `unmark 1` |
 | Delete a task | `delete 1` |
+| Edit a description | `edit 1 Read chapter two` |
+| Reschedule a deadline | `reschedule 2 /by 2026-10-05 1800` |
+| Reschedule an event | `reschedule 3 /from 2026-10-05 1200 /to 2026-10-05 1330` |
+| Undo the last saved change | `undo` |
 | Search descriptions | `find report` |
 | Show dated tasks chronologically | `sort` |
 | Close the app | `bye` |
 
 Command names are lowercase and case-sensitive; searches ignore letter case. Dates use `YYYY-MM-DD` or `YYYY-MM-DD HHMM`, with 24-hour time. Invalid dates such as `2026-02-30` are rejected. An event's start and end must both include a time or both omit it, and the end cannot be earlier than the start.
 
-`find` and `sort` use the current task numbers from `list`, so you can use those numbers with `mark`, `unmark`, and `delete`. These views do not change the list order. Deleting a task renumbers the tasks after it.
+`find` and `sort` use the current task numbers from `list`, so you can use those numbers with `mark`, `unmark`, `delete`, `edit`, and `reschedule`. These views do not change the list order. Deleting a task renumbers the tasks after it.
+
+`edit` changes only the description. `reschedule` changes a deadline's due date or both dates of an event. Both preserve the task's number, type, and completion status. Todos have no date to reschedule.
+
+`undo` restores the state before the last saved change, including additions, deletions, marking, editing, and rescheduling. Repeat it to undo up to 100 changes from the current session. Viewing tasks, failed commands, and unchanged values do not add undo entries. History is cleared when Arn restarts; there is no redo command. An undo is saved like any other change, and a failed save leaves it available to retry.
 
 Error messages explain what needs correcting and include an example where useful. Date errors distinguish an incorrect format, a date that does not exist, and an invalid time. Keep spaces around `/by`, `/from`, and `/to`.
 
@@ -94,7 +102,7 @@ The main classes are under `src/main/java/arn/`:
 
 | Area | Main classes | Responsibility |
 | --- | --- | --- |
-| Startup and command handling | `Launcher`, `Arn` | Start the chosen interface and save changes before reporting success |
+| Startup and command handling | `Launcher`, `Arn`, `TaskSnapshot` | Start the chosen interface, save changes before reporting success, and restore state for rollback and undo |
 | User interface | `MainWindow`, `DialogBox`, `Ui`, `Gui` | Collect input and display responses |
 | Commands | `Parser` | Validate command syntax and update tasks |
 | Task model | `TaskList`, `Task`, `Todo`, `Deadline`, `Event`, `TaskDate` | Manage tasks, dates, searches, and sorted views |

@@ -129,6 +129,50 @@ Task numbers start at 1. Deleting a task shifts the numbers of later tasks, so u
 
 Marking an already completed task, or unmarking an already incomplete task, leaves the save file unchanged.
 
+## Edit and reschedule tasks
+
+Use `edit NUMBER DESCRIPTION` to replace a description. Everything after the number is description text, including date markers such as `/by`; use `reschedule` to change dates.
+
+```text
+edit 2 Submit final report
+```
+
+This keeps task 2 in the same position with the same type, dates, and completion status. Descriptions cannot be empty. Use the current numbers from `list`, `find`, or `sort`.
+
+Reschedule a deadline with `/by`:
+
+```text
+reschedule 2 /by 2026-10-05 1800
+```
+
+Reschedule an event by supplying both `/from` and `/to`:
+
+```text
+reschedule 3 /from 2026-10-05 1200 /to 2026-10-05 1330
+```
+
+Rescheduling keeps the description, task number, type, and completion status. The usual date rules apply: both event endpoints must use the same format, and the end cannot precede the start. You can switch between date-only and timed dates. An explicit midnight (`0000`) stays distinct from a date without a time. Todos cannot be rescheduled because they have no date.
+
+An invalid edit or reschedule leaves the task unchanged. Entering the existing description or dates does not save again or add an undo entry.
+
+## Undo changes
+
+Enter `undo` to reverse the last successful change:
+
+```text
+edit 2 Submit final report
+undo
+```
+
+In this example, task 2 gets its previous description back. Undo also supports adding tasks, deleting tasks, marking, unmarking, and rescheduling. Undoing a deletion restores the task in its original position, so later task numbers return to their previous values. Use `list` to check the current numbers.
+
+- You can undo the last 100 saved changes, one at a time, in the current session.
+- Lists, searches, sorted views, rejected commands, and unchanged values do not count as changes.
+- Undo is saved immediately. If saving fails, tasks return to their state before the undo and you can retry it.
+- History is kept in memory and cleared when Arn closes or restarts. Saved tasks remain on disk.
+- There is no redo command. A new change after an undo can itself be undone.
+- If another session changes the save file, undo refuses to overwrite it. Restart to load the latest tasks; the old session's undo history is not retained.
+
 ## Correcting commands
 
 An error leaves your tasks unchanged. The message explains what to correct; syntax errors also show an example where useful.

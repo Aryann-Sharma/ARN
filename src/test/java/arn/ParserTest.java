@@ -360,7 +360,7 @@ public class ParserTest {
     public void testGeneratedInputsNeverCauseUncheckedErrorsOrPartialChanges() throws ArnException {
         Random random = new Random(74129);
         String[] prefixes = {"", "todo", "todo ", "deadline ", "event ", "mark ", "unmark ",
-            "delete ", "find ", "list ", "sort ", "bye "};
+            "delete ", "edit ", "reschedule ", "undo ", "find ", "list ", "sort ", "bye "};
         String alphabet = " abcdefghijklmnopqrstuvwxyz0123456789/by/from/to|-+\t\r\n\u2003";
         for (int i = 0; i < 2000; i++) {
             Todo original = new Todo("existing task");

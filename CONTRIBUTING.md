@@ -25,6 +25,8 @@ Tests load real JavaFX controls, so they require a display or a virtual display.
 
 Keep command behavior shared between the interfaces. Put layout in FXML and appearance in CSS under `src/main/resources/`. Use UTF-8, four spaces for Java and Gradle files, and the repository's line-ending rules. Compilation treats lint warnings as errors.
 
+Editing replaces a task in place because descriptions and dates are immutable. `TaskSnapshot` records task references, order, and completion flags for rollback and undo. `Arn` adds an undo entry only after a changed task list is saved, and removes an entry only after an undo is saved. The last 100 changes are retained for the current session. If new mutable task fields are introduced, include them in snapshots and change detection.
+
 ## Testing
 
 Add a regression test for a bug fix and update tests when behavior changes.
@@ -41,6 +43,8 @@ Add a regression test for a bug fix and update tests when behavior changes.
 The desktop test saves `desktop.png`, `desktop-small.png`, and `desktop-farewell.png` under `build/reports/ui-smoke/`. Check the normal window, minimum window, and farewell screenshots when changing layout or styling. The test also checks that `bye` leaves the farewell visible for three seconds before closing the app.
 
 Use temporary directories for test data. For storage changes, test failed saves and recovery as well as successful writes. For parser changes, include invalid input and successful commands. GUI tests should load the actual FXML and check behavior visible to the user.
+
+For editing and undo, check all task types, task order, completion status, explicit midnight, unchanged values, and multiple consecutive undos. A failed change or undo must preserve both the current tasks and the available undo history. Include restart checks to distinguish persisted tasks from session-only history.
 
 CI runs checks on Windows, Linux, and Intel macOS. Linux uses Xvfb. Test reports, coverage, and GUI screenshots are uploaded as build artifacts, and the Linux job uploads the runnable JAR.
 

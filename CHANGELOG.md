@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Edit task descriptions without changing their type, position, completion status, or dates.
+- Reschedule deadlines and events with the existing date formats and validation rules.
+- Undo up to 100 saved changes in the current session, including additions, deletions, marking, editing, and rescheduling.
+- Preserve tasks and undo history when saving fails, and skip saves and history entries for unchanged values.
+- Add desktop examples and tests for editing, rescheduling, undo, and persistence across launches.
+
 ## 0.3.1 — 2026-09-26
 
 - Explain missing spaces around date markers, missing arguments, repeated markers, and event markers in the wrong order, with examples of valid commands.
