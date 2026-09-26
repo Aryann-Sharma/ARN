@@ -24,5 +24,17 @@ public class EventTest {
     public void testInvalidEventThrowsException() {
         assertThrows(ArnException.class, () -> new Event("invalid", "2025/10/01", "2025/10/02"));
     }
+
+    @Test
+    public void testEndDateBeforeStartDateThrowsException() {
+        assertThrows(ArnException.class,
+                () -> new Event("backwards", "2025-10-03", "2025-10-01"));
+    }
+
+    @Test
+    public void testEndTimeBeforeStartTimeThrowsException() {
+        assertThrows(ArnException.class,
+                () -> new Event("backwards", "2025-10-01 1400", "2025-10-01 1200"));
+    }
 }
 

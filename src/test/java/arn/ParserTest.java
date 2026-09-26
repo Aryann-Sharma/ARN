@@ -48,5 +48,20 @@ public class ParserTest {
         parser.parse("delete 1");
         assertEquals(0, taskList.size());
     }
+
+    @Test
+    public void testTaskNumberValidation() {
+        TaskList taskList = new TaskList(new ArrayList<>());
+        taskList.add(new Todo("seed task"));
+        Gui gui = new Gui();
+        Parser parser = new Parser(taskList, gui);
+
+        assertThrows(ArnException.class, () -> parser.parse("mark abc"));
+        assertThrows(ArnException.class, () -> parser.parse("unmark abc"));
+        assertThrows(ArnException.class, () -> parser.parse("delete abc"));
+        assertThrows(ArnException.class,
+                () -> parser.parse("mark 999999999999999999999999999"));
+        assertDoesNotThrow(() -> parser.parse("mark  1"));
+    }
 }
 

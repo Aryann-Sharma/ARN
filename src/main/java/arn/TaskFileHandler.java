@@ -80,28 +80,56 @@ public class TaskFileHandler {
      */
     public Task parseTask(String line) {
         assert line != null : "line in file must not be null";
-        Task task = null;
-        String[] parts = line.split("\\|");
-        String taskType = parts[0].trim();
-        try {
-            if (taskType.equals("T")) {
-                task = new Todo(parts[2].trim());
-            } else if (taskType.equals("D")) {
-                task = new Deadline(parts[2].trim(), parts[3].trim());
-            } else if (taskType.equals("E")) {
-                task = new Event(parts[2].trim(), parts[3].trim(), parts[4].trim());
-            }
-        } catch (ArnException e) {
+        if (line.isBlank()) {
             return null;
         }
 
-        if (parts[1].trim().equals("1")) {
-            task.markAsDone();
-        } else {
-            task.markAsNotDone();
+        String[] parts = line.split("\\|", -1);
+        if (parts.length < 3) {
+            return null;
         }
 
-        return task;
+        String taskType = parts[0].trim();
+        String status = parts[1].trim();
+        if (!status.equals("0") && !status.equals("1")) {
+            return null;
+        }
+
+        try {
+            Task task;
+            if (taskType.equals("T") && parts.length >= 3) {
+                task = new Todo(joinParts(parts, 2, parts.length));
+            } else if (taskType.equals("D") && parts.length >= 4) {
+                task = new Deadline(joinParts(parts, 2, parts.length - 1),
+                        parts[parts.length - 1].trim());
+            } else if (taskType.equals("E") && parts.length >= 5) {
+                task = new Event(joinParts(parts, 2, parts.length - 2),
+                        parts[parts.length - 2].trim(), parts[parts.length - 1].trim());
+            } else {
+                return null;
+            }
+
+            if (task.description.isEmpty()) {
+                return null;
+            }
+            if (status.equals("1")) {
+                task.markAsDone();
+            }
+            return task;
+        } catch (ArnException | RuntimeException e) {
+            return null;
+        }
+    }
+
+    private String joinParts(String[] parts, int start, int end) {
+        StringBuilder result = new StringBuilder();
+        for (int i = start; i < end; i++) {
+            if (i > start) {
+                result.append("|");
+            }
+            result.append(parts[i]);
+        }
+        return result.toString().trim();
     }
 
 

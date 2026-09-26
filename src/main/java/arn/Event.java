@@ -43,6 +43,10 @@ public class Event extends Task {
                 throw new ArnException("Invalid date format. Use yyyy-mm-dd or yyyy-mm-dd hhmm.");
             }
         }
+
+        if (this.endDate.isBefore(this.startDate)) {
+            throw new ArnException("Event end date must not be before its start date.");
+        }
     }
 
     public String getType() {

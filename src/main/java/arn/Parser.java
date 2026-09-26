@@ -61,30 +61,20 @@ public class Parser {
         if (input.trim().equals("mark")) {
             throw new ArnException("No task number provided to mark");
         }
-        String[] parts = input.split(" ");
-        int i = Integer.parseInt(parts[1]) - 1;
-        try {
-            taskList.get(i).markAsDone();
-            ui.displayMsg("Task marked as done:");
-            ui.displayMsg(taskList.get(i).toString());
-        } catch (ArnException e) {
-            throw e;
-        }
+        int i = parseTaskIndex(input, "mark");
+        taskList.get(i).markAsDone();
+        ui.displayMsg("Task marked as done:");
+        ui.displayMsg(taskList.get(i).toString());
     }
 
     public void unMark(String input) throws ArnException {
         if (input.trim().equals("unmark")) {
             throw new ArnException("No task number provided to mark");
         }
-        String[] parts = input.split(" ");
-        int i = Integer.parseInt(parts[1]) - 1;
-        try {
-            taskList.get(i).markAsNotDone();
-            ui.displayMsg("Task marked as not done:");
-            ui.displayMsg(taskList.get(i).toString());
-        } catch (ArnException e) {
-            throw e;
-        }
+        int i = parseTaskIndex(input, "unmark");
+        taskList.get(i).markAsNotDone();
+        ui.displayMsg("Task marked as not done:");
+        ui.displayMsg(taskList.get(i).toString());
     }
 
     public void todo(String input) throws ArnException {
@@ -152,14 +142,9 @@ public class Parser {
         if (input.trim().equals("delete")) {
             throw new ArnException("Task number to delete not provided");
         }
-        String[] parts = input.split(" ");
-        int i = Integer.parseInt(parts[1]) - 1;
-        try {
-            Task t = taskList.remove(i);
-            ui.displayMsg("Task removed: " + t.toString());
-        } catch (ArnException e) {
-            throw e;
-        }
+        int i = parseTaskIndex(input, "delete");
+        Task t = taskList.remove(i);
+        ui.displayMsg("Task removed: " + t.toString());
     }
 
     public void find(String input) throws ArnException {
@@ -190,6 +175,23 @@ public class Parser {
                 ui.displayMsg(index + ". " + task);
                 index++;
             }
+        }
+    }
+
+    private int parseTaskIndex(String input, String command) throws ArnException {
+        String taskNumber = input.substring(command.length()).trim();
+        if (!taskNumber.matches("\\d+")) {
+            throw new ArnException("Task number must be a positive integer.");
+        }
+
+        try {
+            int oneBasedIndex = Integer.parseInt(taskNumber);
+            if (oneBasedIndex < 1) {
+                throw new ArnException("Task number must be a positive integer.");
+            }
+            return oneBasedIndex - 1;
+        } catch (NumberFormatException e) {
+            throw new ArnException("Task number is too large.");
         }
     }
 }

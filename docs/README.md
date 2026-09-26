@@ -16,7 +16,7 @@ Type a command in the input area and press **Enter** or select **Send**. The ref
 - A live count of locally saved tasks
 - Distinct visual feedback for successful commands and errors
 
-Commands are case-sensitive and should be entered in lowercase. Dates use `yyyy-mm-dd` or `yyyy-mm-dd hhmm` in 24-hour time. For events, the start and end must both include a time or both omit it.
+Commands are case-sensitive and should be entered in lowercase. Dates use `yyyy-mm-dd` or `yyyy-mm-dd hhmm` in 24-hour time. For events, the start and end must both include a time or both omit it, and the end cannot be earlier than the start.
 
 ## List
 
@@ -60,7 +60,7 @@ added: [D][ ] insurance (by Jun 3 2025)
 Example: deadline assignment /by 2025-07-03 2359
 
 ```text
-added: [D][ ] assignment (by Jul 3 2025, 11:59PM)
+added: [D][ ] assignment (by Jul 3 2025, 11:59pm)
 ```
 
 ## Adding Event tasks
@@ -79,7 +79,7 @@ added: [E][ ] party (from May 2 2025 to May 3 2025)
 Example: event meeting /from 2025-05-09 1600 /to 2025-05-09 1800
 
 ```text
-added: [E][ ] meeting (from May 9 2025, 4:00PM to May 9 2025, 6:00PM)
+added: [E][ ] meeting (from May 9 2025, 4:00pm to May 9 2025, 6:00pm)
 ```
 
 ## Marking tasks
@@ -133,7 +133,7 @@ Example: find meeting
 
 ```text
 Here are the matching tasks in your list:
-1. [E][ ] meeting (from May 9 2025, 4:00PM to May 9 2025, 6:00PM)
+1. [E][ ] meeting (from May 9 2025, 4:00pm to May 9 2025, 6:00pm)
 ```
 
 ## Sorting tasks by dates
@@ -145,7 +145,7 @@ Displays deadlines and events chronologically. Event tasks are ordered by their 
 Example: sort
 
 ```text
-1. [E][ ] meeting (from May 9 2025, 4:00PM to May 9 2025, 6:00PM)
+1. [E][ ] meeting (from May 9 2025, 4:00pm to May 9 2025, 6:00pm)
 2. [D][ ] insurance (by Jun 3 2025)
 ```
 
