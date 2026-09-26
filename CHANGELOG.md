@@ -4,39 +4,34 @@
 
 ### Commands and dates
 
-- Reject invalid calendar dates and times instead of silently adjusting them.
-- Preserve an explicitly entered midnight time across saving and reopening.
+- Validate calendar dates, times, and event ranges. Preserve an explicitly entered midnight time across saving and reopening.
 - Keep task numbers from the saved list in search results and date-sorted views.
-- Handle empty input, repeated whitespace, invalid task numbers, and malformed date clauses consistently.
-- Keep description searches independent of the system locale.
+- Handle empty input, repeated whitespace, invalid task numbers, and malformed date clauses consistently. Keep description searches independent of the system locale.
 
 ### Storage
 
 - Save successful changes before reporting success and roll back a change if saving fails.
-- Avoid writes for read-only commands and operations that leave tasks unchanged.
-- Create the data file only after the first successful change.
+- Create the data file only after the first successful change. Avoid writes for commands that leave tasks unchanged.
 - Stop startup on malformed or unreadable saves while preserving the original file.
-- Detect saves changed by another session or editor and require a restart before overwriting them.
+- Detect files changed by another session or editor and require a restart to load the newer data.
 - Coordinate writers with a lock file and replace data using a complete temporary file.
-- Preserve Unicode descriptions, pipe characters, and compatibility with older save files.
+- Preserve Unicode descriptions and pipe characters. Continue to read unversioned UTF-8 files that contain valid tasks.
 
 ### Desktop and console
 
-- Preserve unfinished input when using quick actions.
-- Keep failed commands available for correction or retry.
+- Preserve unfinished input when using quick actions and keep failed commands in the desktop input field for correction.
 - Preserve the task count after blank input and the reading position when resizing.
 - Add visible keyboard focus, an accessible command label, and a wrapping date hint.
 - Add `--cli`, `--help`, and `--version` to the packaged application.
-- Handle console end of input cleanly and use UTF-8 for console input and output.
-- Return a nonzero exit status for console startup failures and invalid launch options.
+- Use UTF-8 in the console and exit cleanly at end of input. Return a nonzero exit status for console startup failures and invalid launch options.
 
 ### Build and verification
 
 - Update the Gradle wrapper, JavaFX, Shadow, and JUnit dependencies.
 - Treat compiler warnings as build failures and produce reproducible archives.
 - Add regression coverage for parsing, task models, persistence, command rollback, and JavaFX interactions.
-- Exercise the fat JAR in separate processes, including persistence across launches, startup failures, bundled native libraries, and desktop rendering.
+- Test the fat JAR in separate processes, including persistence across launches, startup failures, bundled native libraries, and desktop rendering.
 - Generate JaCoCo coverage reports and packaged GUI screenshots.
-- Run CI on Windows, Linux, and Intel macOS and check dependency updates monthly.
+- Run CI on Windows, Linux, and Intel macOS. Configure monthly dependency checks with Dependabot.
 
 The release artifact is `Arn.jar`, for x64 Windows, Linux, and Intel macOS with Java 17.

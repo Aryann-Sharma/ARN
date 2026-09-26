@@ -24,7 +24,7 @@ The header shows how many tasks are saved. Quick actions preserve your unfinishe
 
 ## Command and date rules
 
-Enter one command at a time. Command names are case-sensitive and lowercase. Descriptions can contain spaces, Unicode text, and the `|` character. A description must not be empty.
+Enter one command per line. Command names are case-sensitive and lowercase. Descriptions can contain spaces, Unicode text, and the `|` character. Leading and trailing whitespace is removed, and a description must not be empty.
 
 Dates use exactly `YYYY-MM-DD` or `YYYY-MM-DD HHMM`, with zero-padded fields and 24-hour time. For example:
 
@@ -69,7 +69,7 @@ event Team lunch /from 2026-10-04 1200 /to 2026-10-04 1330
 added: [E][ ] Team lunch (from Oct 4 2026, 12:00PM to Oct 4 2026, 1:30PM)
 ```
 
-Both event dates must include a time or both omit it. The end must be equal to or later than the start. For a date-only event:
+Both event dates must include a time or both omit it. The end must be equal to or later than the start. A date-only event can be entered like this:
 
 ```text
 event Workshop /from 2026-10-05 /to 2026-10-06
@@ -77,9 +77,9 @@ event Workshop /from 2026-10-05 /to 2026-10-06
 
 Keep a space around the date clauses, as shown above.
 
-## List and update tasks
+## List tasks
 
-`list` displays every task in its saved order. After adding the first three examples above, the result is:
+`list` displays every task in its saved order. The following list, search, and sort examples assume you have added only Read a chapter, Submit report, and Team lunch, and have left them incomplete:
 
 ```text
 1. [T][ ] Read a chapter
@@ -88,18 +88,6 @@ Keep a space around the date clauses, as shown above.
 ```
 
 `[T]`, `[D]`, and `[E]` identify todos, deadlines, and events. `[ ]` means incomplete and `[X]` means complete.
-
-Use the displayed number to update a task:
-
-| Command | Effect |
-| --- | --- |
-| `mark 2` | Mark Submit report complete |
-| `unmark 2` | Mark Submit report incomplete |
-| `delete 2` | Remove Submit report |
-
-Task numbers start at 1. Deleting a task shifts the numbers of later tasks, so use `list` to check the current numbering before another update.
-
-Marking an already completed task, or unmarking an already incomplete task, leaves the save file unchanged.
 
 ## Find tasks
 
@@ -127,6 +115,20 @@ Search results keep the task numbers from `list`. In this example, use `mark 2` 
 
 This view keeps the saved task numbers and does not change the order of `list`. Tasks with equal dates keep their relative order.
 
+## Mark or remove tasks
+
+Use the displayed number to update a task:
+
+| Command | Effect |
+| --- | --- |
+| `mark 2` | Mark Submit report complete |
+| `unmark 2` | Mark Submit report incomplete |
+| `delete 2` | Remove Submit report |
+
+Task numbers start at 1. Deleting a task shifts the numbers of later tasks, so use `list` to check the current numbering before another update.
+
+Marking an already completed task, or unmarking an already incomplete task, leaves the save file unchanged.
+
 ## Console mode
 
 ```bash
@@ -142,22 +144,26 @@ java -jar Arn.jar --version
 
 `--help` prints the available options and `--version` prints the release version. An unknown option returns exit code 2. A startup failure caused by unreadable or malformed task data returns exit code 1.
 
+Command errors are printed and the session continues. Exit code 0 means the session ended normally; it does not mean every command succeeded.
+
 In the desktop application, `bye` displays a farewell. Close the window to exit.
 
 ## Saving and recovering data
 
 Arn saves tasks in `data/arn.txt`, relative to the directory from which it is launched. Launching the JAR from a different directory uses a different task file. The file is created on the first successful change; opening the app or using `list`, `find`, `sort`, or `bye` does not create or rewrite it.
 
-The save file is UTF-8 plain text with a version header. Older unversioned save files are supported. A save writes a complete temporary copy before replacing the active file, using atomic replacement where the file system supports it. The `arn.txt.lock` file can remain beside the save file after exit; this is normal.
+The save file is UTF-8 plain text with a version header. Older unversioned files are supported if they use UTF-8 and contain tasks that meet the current validation rules. A save writes a complete temporary copy before replacing the active file, using atomic replacement where the file system supports it. The `arn.txt.lock` file normally remains beside the save file after exit.
 
 | Problem | What happens and how to recover |
 | --- | --- |
 | Invalid command or date | Arn shows an error and leaves your tasks unchanged. Correct the input and retry. |
-| Save fails | The change is rolled back. Check that the data directory is writable, then retry the retained command. |
+| Save fails | The change is rolled back. Check the reported error and whether the data directory is writable, then retry. The desktop keeps the command in the input field; in the console, enter it again. |
 | Another instance is saving | The change is rejected. Wait for that save to finish and retry; a subsequent conflict may require a restart. |
 | The save file changed outside this session | Arn refuses to overwrite the newer data. Restart to load it before making changes. |
 | Saved data is malformed or unreadable | Startup stops and leaves the file intact. Make a backup, inspect the reported problem, and correct the file or restore a known good copy before restarting. |
 
 To back up or move your tasks, close Arn and copy `data/arn.txt`. Keep a backup before editing it manually. Task descriptions are not encrypted.
+
+Some older releases used the operating system's default text encoding. If an older file is rejected as invalid UTF-8, keep the original backup, open a copy in an editor using its original encoding, and save it as UTF-8. Older files may also contain dates or event ranges that are no longer accepted; correct the reported task using the rules above before restarting.
 
 See the [project README](../README.md) for build and test instructions and the [changelog](../CHANGELOG.md) for release changes.
