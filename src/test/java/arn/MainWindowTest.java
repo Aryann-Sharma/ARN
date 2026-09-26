@@ -71,6 +71,18 @@ public class MainWindowTest {
             assertEquals(5, controller.dialogContainer.getChildren().size());
             DialogBox errorMessage = (DialogBox) controller.dialogContainer.getChildren().get(4);
             assertTrue(errorMessage.getStyleClass().contains("error-dialog"));
+
+            controller.userInput.setText("mark abc");
+            controller.sendButton.fire();
+            assertEquals(7, controller.dialogContainer.getChildren().size());
+            DialogBox invalidNumberMessage = (DialogBox) controller.dialogContainer.getChildren().get(6);
+            assertTrue(invalidNumberMessage.getStyleClass().contains("error-dialog"));
+
+            controller.userInput.setText("mark  1");
+            controller.sendButton.fire();
+            assertEquals(9, controller.dialogContainer.getChildren().size());
+            DialogBox repeatedSpaceMessage = (DialogBox) controller.dialogContainer.getChildren().get(8);
+            assertTrue(repeatedSpaceMessage.getStyleClass().contains("arn-dialog"));
             return null;
         });
     }

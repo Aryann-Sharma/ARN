@@ -51,7 +51,7 @@ Enter a command in the composer and press **Enter** or select **Send**. The **Sh
 | `sort` | Display all deadlines and events by date without changing their saved order | `sort` |
 | `bye` | Display Arn's farewell message | `bye` |
 
-Commands are case-sensitive and should be entered in lowercase. Dates use `YYYY-MM-DD` or `YYYY-MM-DD HHMM` in 24-hour time. An event's start and end must both include a time or both omit it.
+Commands are case-sensitive and should be entered in lowercase. Dates use `YYYY-MM-DD` or `YYYY-MM-DD HHMM` in 24-hour time. An event's start and end must both include a time or both omit it, and the end cannot be earlier than the start.
 
 For detailed examples, see the [user guide](docs/README.md).
 
