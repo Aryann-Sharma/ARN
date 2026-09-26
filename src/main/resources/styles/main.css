@@ -74,6 +74,10 @@
     -fx-text-fill: -arn-blue-dark;
 }
 
+.action-chip:focused {
+    -fx-border-color: -arn-blue;
+}
+
 .conversation-scroll,
 .conversation-scroll > .viewport,
 .conversation {
@@ -158,7 +162,10 @@
 }
 
 .command-input:focused {
-    -fx-background-color: transparent;
+    -fx-background-color: white;
+    -fx-background-radius: 7px;
+    -fx-border-color: -arn-blue;
+    -fx-border-radius: 7px;
 }
 
 .send-button {
@@ -173,6 +180,10 @@
 
 .send-button:hover {
     -fx-background-color: -arn-blue-dark;
+}
+
+.send-button:focused {
+    -fx-effect: dropshadow(gaussian, #8bb4ff, 5, 0.8, 0, 0);
 }
 
 .send-button:pressed {

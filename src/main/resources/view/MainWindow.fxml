@@ -53,11 +53,11 @@
                 <HBox alignment="CENTER_LEFT" spacing="10.0" styleClass="quick-actions">
                     <children>
                         <Label styleClass="quick-label" text="QUICK ACTIONS" />
-                        <Button mnemonicParsing="false" onAction="#handleListTasks"
+                        <Button fx:id="listButton" mnemonicParsing="false" onAction="#handleListTasks"
                                 styleClass="action-chip" text="☷  Show tasks" />
-                        <Button mnemonicParsing="false" onAction="#handleSortByDate"
+                        <Button fx:id="sortButton" mnemonicParsing="false" onAction="#handleSortByDate"
                                 styleClass="action-chip" text="◷  By date" />
-                        <Button mnemonicParsing="false" onAction="#handleShowExamples"
+                        <Button fx:id="examplesButton" mnemonicParsing="false" onAction="#handleShowExamples"
                                 styleClass="action-chip" text="?  Examples" />
                     </children>
                     <padding>
@@ -87,7 +87,7 @@
                                         onAction="#handleUserInput" styleClass="send-button" text="Send  →" />
                             </children>
                         </HBox>
-                        <Label maxWidth="1.7976931348623157E308" styleClass="input-hint"
+                        <Label maxWidth="1.7976931348623157E308" styleClass="input-hint" wrapText="true"
                                text="Press Enter to send  •  Dates use YYYY-MM-DD or YYYY-MM-DD HHMM" />
                     </children>
                     <padding>
@@ -98,4 +98,3 @@
         </VBox>
     </children>
 </AnchorPane>
-

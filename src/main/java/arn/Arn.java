@@ -16,10 +16,7 @@ import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 
 /**
- * Main entry point for Arn application
- * <p>
- * Initializes the user interface, loads tasks from
- * storage, and processes user commands until termination.
+ * Starts the application and saves successful changes before reporting them.
  */
 public class Arn extends Application {
     private static final Logger LOGGER = Logger.getLogger(Arn.class.getName());
@@ -30,53 +27,44 @@ public class Arn extends Application {
     Parser parser;
 
     public static void main(String[] args) {
-        Ui ui = new Ui();
-        ui.displayGreet();
+        int exitCode = runConsole(new Ui());
+        if (exitCode != 0) {
+            System.exit(exitCode);
+        }
+    }
 
-        TaskFileHandler taskFileHandler = new TaskFileHandler("./data/arn.txt");
-        TaskList taskList;
-        try {
-            taskList = new TaskList(taskFileHandler.readTasks());
+    static int runConsole(Ui ui) {
+        try (ui) {
+            ui.displayGreet();
+            Arn arn = new Arn();
+            arn.initialize(new TaskFileHandler("./data/arn.txt"));
+            String input;
+            while ((input = ui.readCommand()) != null) {
+                ui.displayMsg(arn.getResponse(input));
+                if ("bye".equals(input.strip())) {
+                    break;
+                }
+                ui.displayMsg("");
+            }
         } catch (StorageException e) {
             LOGGER.log(Level.SEVERE, "Unable to start because task data could not be loaded", e);
             ui.displayMsg("Error: " + e.getMessage());
-            ui.close();
-            return;
+            return 1;
         }
+        return 0;
+    }
 
-        Parser parser = new Parser(taskList, ui);
-
-        while (true) {
-            String input = ui.readCommand();
-            List<Task> previousTasks = taskList.getTasks();
-            List<Boolean> previousStatuses = getTaskStatuses(previousTasks);
-            try {
-                parser.parse(input);
-                taskFileHandler.writeTasks(taskList.getTasks());
-                if ("bye".equals(input)) {
-                    break;
-                }
-            } catch (ArnException e) {
-                ui.displayMsg("Error: " + e.getMessage());
-            } catch (StorageException e) {
-                taskList = restoreTasks(previousTasks, previousStatuses);
-                parser = new Parser(taskList, ui);
-                ui.displayMsg("Error: " + e.getMessage());
-            }
-
-            ui.displayMsg("");
-        }
-
-        ui.close();
+    void initialize(TaskFileHandler storage) throws StorageException {
+        taskFileHandler = storage;
+        taskList = new TaskList(storage.readTasks());
+        gui = new Gui();
+        parser = new Parser(taskList, gui);
     }
 
     @Override
     public void start(Stage stage) {
         try {
-            taskFileHandler = new TaskFileHandler("./data/arn.txt");
-            taskList = new TaskList(taskFileHandler.readTasks());
-            gui = new Gui();
-            parser = new Parser(taskList, gui);
+            initialize(new TaskFileHandler("./data/arn.txt"));
 
             FXMLLoader fxmlLoader = new FXMLLoader(Arn.class.getResource("/view/MainWindow.fxml"));
             AnchorPane ap = fxmlLoader.load();
@@ -94,28 +82,35 @@ public class Arn extends Application {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Unable to start Arn");
             alert.setHeaderText("Arn could not start");
-            alert.setContentText("Check that the data directory is accessible, then try again.");
+            alert.setContentText(e instanceof StorageException
+                    ? e.getMessage()
+                    : "The application could not load its interface. Try downloading the release again.");
             alert.showAndWait();
             Platform.exit();
         }
     }
 
     public String getResponse(String input) {
+        gui.clearResponses();
         List<Task> previousTasks = taskList.getTasks();
         List<Boolean> previousStatuses = getTaskStatuses(previousTasks);
         try {
             parser.parse(input);
-            taskFileHandler.writeTasks(taskList.getTasks());
+            if (hasChanges(previousTasks, previousStatuses)) {
+                taskFileHandler.writeTasks(taskList.getTasks());
+            }
             return gui.getResponses();
-        } catch (ArnException e) {
-            gui.clearResponses();
-            return "Error: " + e.getMessage();
-        } catch (StorageException e) {
+        } catch (ArnException | StorageException e) {
             taskList = restoreTasks(previousTasks, previousStatuses);
             parser = new Parser(taskList, gui);
             gui.clearResponses();
             return "Error: " + e.getMessage();
         }
+    }
+
+    private boolean hasChanges(List<Task> previousTasks, List<Boolean> previousStatuses) {
+        return !previousTasks.equals(taskList.getTasks())
+                || !previousStatuses.equals(getTaskStatuses(taskList.getTasks()));
     }
 
     private static List<Boolean> getTaskStatuses(List<Task> tasks) {

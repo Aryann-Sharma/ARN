@@ -2,126 +2,112 @@
 
 [![Build](https://github.com/Aryann-Sharma/ARN/actions/workflows/ci.yml/badge.svg)](https://github.com/Aryann-Sharma/ARN/actions/workflows/ci.yml)
 
-Arn is a lightweight desktop task assistant built with Java 17 and JavaFX. It uses a conversational command interface to capture todos, track deadlines, schedule events, and search or sort saved tasks.
-
-Tasks are stored locally, so they remain available between sessions without requiring an account or an internet connection at runtime.
+Arn is a desktop task manager built with Java 17 and JavaFX. Type short commands to add todos, track deadlines, plan events, and find tasks. Tasks stay on your computer and remain available between sessions.
 
 ![Arn desktop interface](docs/Ui.png)
 
-## Features
+## Download and run
 
-- Create todos, deadlines, and scheduled events
-- Mark tasks complete or incomplete
-- Search tasks by description
-- View dated tasks in chronological order
-- Persist tasks automatically in a local save file
-- Use quick actions for common commands
-- See live task-count, empty-state, and error feedback
-- Navigate a responsive JavaFX chat interface with keyboard-friendly input
+Download `Arn.jar` from the [releases page](https://github.com/Aryann-Sharma/ARN/releases), then run it from the directory where you want to keep your task data:
 
-## Requirements
+```bash
+java -jar Arn.jar
+```
 
-- Java Development Kit (JDK) 17
-- No separate Gradle installation is needed; the repository includes the Gradle wrapper
+The release requires a **64-bit Java 17 runtime** and supports **x64 Windows, Linux, and Intel macOS**. JavaFX and its native libraries are included in the fat JAR; Java itself is not included. The release does not bundle native ARM libraries.
 
-## Run the application
+Type a command and press **Enter** or select **Send**. Quick actions show your tasks, sort dated tasks, or display examples. Quick actions preserve anything you are typing, and failed commands remain in the input field for correction.
+
+A console interface is also available:
+
+```bash
+java -jar Arn.jar --cli
+java -jar Arn.jar --help
+java -jar Arn.jar --version
+```
+
+Console input and output use UTF-8. Use a terminal configured for UTF-8 when entering non-ASCII text. The console exits on `bye` or end of input.
+
+See the [user guide](docs/README.md) for setup, examples, and storage troubleshooting, or the [changelog](CHANGELOG.md) for release history.
+
+## Commands
+
+| Command | Example |
+| --- | --- |
+| Add a todo | `todo Read a chapter` |
+| Add a deadline | `deadline Submit report /by 2026-10-02 1800` |
+| Add an event | `event Team lunch /from 2026-10-04 1200 /to 2026-10-04 1330` |
+| Show tasks | `list` |
+| Mark complete or incomplete | `mark 1`, `unmark 1` |
+| Delete a task | `delete 1` |
+| Search descriptions | `find report` |
+| Show dated tasks chronologically | `sort` |
+| Display a farewell; exit in console mode | `bye` |
+
+Commands are case-sensitive. Dates must be valid calendar dates in `YYYY-MM-DD` or `YYYY-MM-DD HHMM` format, with 24-hour time. Invalid dates such as `2026-02-30` are rejected. An event's start and end must both include a time or both omit it, and its end cannot precede its start.
+
+`find` and `sort` display the original task numbers from `list`, so those numbers can be used directly with `mark`, `unmark`, and `delete`. They do not change the saved order.
+
+## Local storage
+
+Task data lives in `data/arn.txt`, relative to the working directory. The file is created on the first successful change. Opening the app, viewing tasks, and commands that leave tasks unchanged do not rewrite it.
+
+Changes are written to a temporary file before replacing the save file, using atomic replacement where supported. A failed save restores the previous state and reports an error. The versioned UTF-8 format also accepts legacy save files.
+
+If saved data is malformed or unreadable, startup stops and leaves the original data intact. If another instance or an external editor changes the file, Arn rejects further writes from the stale session; restart to load the latest data. A persistent `data/arn.txt.lock` file is normal and coordinates saves.
+
+Task descriptions are stored as plain text. The local `data/` directory is excluded from Git.
+
+## Development
+
+Install **JDK 17**. The checked-in Gradle wrapper supplies the build tools.
 
 On Windows:
 
 ```powershell
 .\gradlew.bat run
+.\gradlew.bat clean check shadowJar --warning-mode fail
 ```
 
 On macOS or Linux:
 
 ```bash
 ./gradlew run
+./gradlew clean check shadowJar --warning-mode fail
 ```
 
-Enter a command in the composer and press **Enter** or select **Send**. The **Show tasks**, **By date**, and **Examples** quick actions provide shortcuts for common workflows.
+On Linux without a graphical session, run the checks under a virtual display:
 
-## Command reference
+```bash
+xvfb-run --auto-servernum ./gradlew clean check shadowJar --warning-mode fail
+```
 
-| Command | Purpose | Example |
+The first build needs internet access to download dependencies. The application works offline after installation.
+
+## Design and verification
+
+The code is organized into a few small layers:
+
+| Area | Main classes | Responsibility |
 | --- | --- | --- |
-| `todo DESCRIPTION` | Add a task without a date | `todo Read a chapter` |
-| `deadline DESCRIPTION /by DATE` | Add a task with a due date | `deadline Submit report /by 2026-10-02 1800` |
-| `event DESCRIPTION /from START /to END` | Add a scheduled event | `event Team lunch /from 2026-10-04 1200 /to 2026-10-04 1330` |
-| `list` | Show all saved tasks | `list` |
-| `mark NUMBER` | Mark a task complete | `mark 1` |
-| `unmark NUMBER` | Mark a task incomplete | `unmark 1` |
-| `delete NUMBER` | Delete a task | `delete 1` |
-| `find KEYWORD` | Find tasks by description | `find report` |
-| `sort` | Display all deadlines and events by date without changing their saved order | `sort` |
-| `bye` | Display Arn's farewell message | `bye` |
+| Entry points | `Launcher`, `Arn` | Select the interface, initialize storage, and save changes before reporting success |
+| User interface | `MainWindow`, `DialogBox`, `Ui`, `Gui` | Collect input and display responses |
+| Commands | `Parser` | Validate command syntax and update tasks |
+| Task model | `TaskList`, `Task`, `Todo`, `Deadline`, `Event`, `TaskDate` | Manage tasks, dates, searches, and sorted views |
+| Persistence | `TaskFileHandler`, `StorageException` | Read compatible save files and protect writes |
 
-Commands are case-sensitive and should be entered in lowercase. Dates use `YYYY-MM-DD` or `YYYY-MM-DD HHMM` in 24-hour time. An event's start and end must both include a time or both omit it, and the end cannot be earlier than the start.
+FXML, CSS, and images are under `src/main/resources/`. Tests are under `src/test/java/arn/`.
 
-For detailed examples, see the [user guide](docs/README.md).
+`check` runs unit and JavaFX tests plus `jarSmokeTest`. The packaged tests launch separate JVMs, exercise console persistence and startup failures, inspect bundled resources, and open the desktop using the release JAR. GUI checks produce screenshots at normal and minimum window sizes.
 
-## Project structure
+| Output | Location |
+| --- | --- |
+| Unit and JavaFX test report | `build/reports/tests/test/index.html` |
+| Packaged application test report | `build/reports/tests/jarSmokeTest/index.html` |
+| JaCoCo coverage report | `build/reports/jacoco/test/html/index.html` |
+| Packaged GUI screenshots | `build/reports/ui-smoke/` |
+| Runnable fat JAR | `build/libs/Arn.jar` |
 
-```text
-src/main/java/arn/
-├── Arn.java              Application setup and command-response bridge
-├── MainWindow.java       JavaFX window controller
-├── DialogBox.java        Styled conversation messages
-├── Parser.java           Command routing and validation
-├── TaskList.java         Task collection operations
-├── TaskFileHandler.java  Local persistence
-├── StorageException.java Storage failure reporting
-└── Task.java             Base model for Todo, Deadline, and Event
+CI runs the same checks on Windows, Linux, and Intel macOS, and retains test reports and the JAR as build artifacts. Compiler warnings fail the build. Dependency updates are checked monthly.
 
-src/main/resources/
-├── view/                 FXML layouts
-├── styles/               JavaFX stylesheet
-└── images/               Arn and user artwork
-```
-
-The application follows a small layered design: JavaFX controllers collect input, `Parser` interprets commands, `TaskList` manages the domain objects, and `TaskFileHandler` saves changes to `data/arn.txt`.
-
-## Run the tests
-
-On Windows:
-
-```powershell
-.\gradlew.bat clean test
-```
-
-On macOS or Linux:
-
-```bash
-./gradlew clean test
-```
-
-The suite covers task models, parsing, collection behavior, persistence compatibility, error recovery, and JavaFX interactions using the real FXML and CSS.
-
-## Build a runnable JAR
-
-```bash
-./gradlew shadowJar
-```
-
-The packaged application is written to `build/libs/Arn.jar`.
-
-Run it with:
-
-```bash
-java -jar build/libs/Arn.jar
-```
-
-## Data and privacy
-
-Arn writes task data to `data/arn.txt`, relative to the directory from which the application is launched. Valid commands are saved immediately. Writes use a temporary file and atomic replacement where the operating system supports it, reducing the chance of a partially written save file. The current file format includes a version header while remaining compatible with existing unversioned files.
-
-The runtime data directory is excluded from Git. Avoid storing sensitive information in task descriptions if the project directory is shared or backed up to a public location.
-
-## Engineering practices
-
-- Automated builds and tests run on every pull request and push to `master`.
-- Java 17 is enforced through the Gradle toolchain, with compiler lint checks enabled.
-- Storage failures are reported without discarding the last successfully saved task state.
-- UTF-8 encoding and repository-wide line-ending rules keep builds consistent across platforms.
-- The runnable JAR is produced and retained as a build artifact in continuous integration.
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for local setup and pull request guidelines.
+For contribution and release steps, see [CONTRIBUTING.md](CONTRIBUTING.md).

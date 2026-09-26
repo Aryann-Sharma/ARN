@@ -1,12 +1,18 @@
 package arn;
 
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Parses and interprets user commands,
  * then updates the task list and UI accordingly.
  */
 public final class Parser {
+    private static final Pattern BY_CLAUSE = Pattern.compile("(?<!\\S)/by(?=\\s|$)", Pattern.UNICODE_CHARACTER_CLASS);
+    private static final Pattern FROM_CLAUSE = Pattern.compile("(?<!\\S)/from(?=\\s|$)", Pattern.UNICODE_CHARACTER_CLASS);
+    private static final Pattern TO_CLAUSE = Pattern.compile("(?<!\\S)/to(?=\\s|$)", Pattern.UNICODE_CHARACTER_CLASS);
+
     private final TaskList taskList;
     private final Ui ui;
 
@@ -22,8 +28,11 @@ public final class Parser {
         if (input == null || input.isBlank()) {
             throw new ArnException("Enter a command to continue.");
         }
+        if (input.contains("\n") || input.contains("\r")) {
+            throw new ArnException("Enter one command on a single line.");
+        }
 
-        String command = input.trim();
+        String command = input.strip();
         if (command.equals("bye")) {
             ui.displayBye();
         } else if (command.equals("list")) {
@@ -85,21 +94,21 @@ public final class Parser {
         if (input.equals("todo")) {
             throw new ArnException("Empty task description.");
         }
-        String description = input.substring("todo".length()).trim();
+        String description = input.substring("todo".length()).strip();
         taskList.add(new Todo(description));
         ui.displayMsg("added: " + taskList.get(taskList.size() - 1));
     }
 
     private void deadline(String input) throws ArnException {
-        int j = input.indexOf("/by");
+        int j = findClause(input, BY_CLAUSE, "deadline".length());
         if (j == -1) {
             throw new ArnException("Deadline task must have a '/by' clause.");
         }
-        String description = input.substring("deadline".length(), j).trim();
+        String description = input.substring("deadline".length(), j).strip();
         if (description.isEmpty()) {
             throw new ArnException("Empty task description.");
         }
-        String date = input.substring(j + 3).trim();
+        String date = input.substring(j + 3).strip();
         if (date.isEmpty()) {
             throw new ArnException("Empty date.");
         }
@@ -109,17 +118,17 @@ public final class Parser {
     }
 
     private void event(String input) throws ArnException {
-        int j = input.indexOf("/from");
-        int k = j == -1 ? -1 : input.indexOf("/to", j + "/from".length());
+        int j = findClause(input, FROM_CLAUSE, "event".length());
+        int k = j == -1 ? -1 : findClause(input, TO_CLAUSE, j + "/from".length());
         if (j == -1 || k == -1) {
             throw new ArnException("Event task must have both '/from' and '/to' clauses.");
         }
-        String description = input.substring("event".length(), j).trim();
+        String description = input.substring("event".length(), j).strip();
         if (description.isEmpty()) {
             throw new ArnException("Empty task description.");
         }
-        String startDate = input.substring(j + 5, k).trim();
-        String endDate = input.substring(k + 3).trim();
+        String startDate = input.substring(j + 5, k).strip();
+        String endDate = input.substring(k + 3).strip();
         if (startDate.isEmpty()) {
             throw new ArnException("Empty start date.");
         }
@@ -141,7 +150,7 @@ public final class Parser {
     }
 
     private void find(String input) throws ArnException {
-        String keyword = input.substring(4).trim();
+        String keyword = input.substring(4).strip();
         if (keyword.isEmpty()) {
             throw new ArnException("Empty keyword.");
         }
@@ -150,10 +159,9 @@ public final class Parser {
             ui.displayMsg("Sorry, no matching tasks found.");
         } else {
             ui.displayMsg("Here are the matching tasks in your list:");
-            int index = 1;
+            List<Task> savedTasks = taskList.getTasks();
             for (Task task : matchList) {
-                ui.displayMsg(index + ". " + task);
-                index++;
+                ui.displayMsg((savedTasks.indexOf(task) + 1) + ". " + task);
             }
         }
     }
@@ -163,20 +171,26 @@ public final class Parser {
         if (sortList.isEmpty()) {
             ui.displayMsg("No deadlines or events in the list.");
         } else {
-            int index = 1;
+            List<Task> savedTasks = taskList.getTasks();
             for (Task task : sortList) {
-                ui.displayMsg(index + ". " + task);
-                index++;
+                ui.displayMsg((savedTasks.indexOf(task) + 1) + ". " + task);
             }
         }
     }
 
     private boolean isCommand(String input, String command) {
-        return input.equals(command) || input.startsWith(command + " ");
+        return input.equals(command) || (input.startsWith(command)
+                && input.length() > command.length()
+                && Character.isWhitespace(input.charAt(command.length())));
+    }
+
+    private int findClause(String input, Pattern clause, int start) {
+        Matcher matcher = clause.matcher(input);
+        return matcher.find(start) ? matcher.start() : -1;
     }
 
     private int parseTaskIndex(String input, String command) throws ArnException {
-        String taskNumber = input.substring(command.length()).trim();
+        String taskNumber = input.substring(command.length()).strip();
         if (!taskNumber.matches("\\d+")) {
             throw new ArnException("Task number must be a positive integer.");
         }
