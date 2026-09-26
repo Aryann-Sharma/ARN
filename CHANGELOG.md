@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.4.0 — 2026-09-27
+
+- Make the header and message logos larger, using a blue robot on a light tile for stronger contrast.
+- Use the same compact robot icon in the taskbar, with multiple sizes for different display scales.
 - Reschedule an event's start or end independently, retaining the omitted endpoint.
 - Retain existing event times when rescheduling with date-only values, including when both endpoints are supplied; show the full resulting range in responses.
 - Document retained times and validate the complete event before saving or adding undo history.

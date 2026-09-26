@@ -35,7 +35,8 @@ public class MainWindow extends AnchorPane {
     private Arn arn;
     private boolean exiting;
 
-    private final Image arnImage = new Image(this.getClass().getResourceAsStream("/images/ArnLogo.png"));
+    private final Image arnImage = new Image(this.getClass().getResourceAsStream("/images/ArnTaskbar.png"),
+            96, 96, true, true);
     private final Image userImage = new Image(this.getClass().getResourceAsStream("/images/ArnUser.png"));
 
     @FXML

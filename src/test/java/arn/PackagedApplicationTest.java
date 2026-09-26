@@ -50,7 +50,8 @@ public class PackagedApplicationTest {
             assertEquals(System.getProperty("arn.version"),
                     jar.getManifest().getMainAttributes().getValue("Implementation-Version"));
             for (String resource : List.of("view/MainWindow.fxml", "view/DialogBox.fxml", "styles/main.css",
-                    "images/ArnLogo.png", "images/ArnUser.png", "glass.dll", "libglass.so", "libglass.dylib")) {
+                    "images/ArnLogo.png", "images/ArnTaskbar.png", "images/ArnUser.png",
+                    "glass.dll", "libglass.so", "libglass.dylib")) {
                 assertTrue(jar.getEntry(resource) != null, "Missing packaged resource: " + resource);
             }
         }
