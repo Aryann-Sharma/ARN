@@ -25,6 +25,7 @@ public class Arn extends Application {
     TaskList taskList;
     Gui gui;
     Parser parser;
+    private boolean exitRequested;
 
     public static void main(String[] args) {
         int exitCode = runConsole(new Ui());
@@ -41,13 +42,13 @@ public class Arn extends Application {
             String input;
             while ((input = ui.readCommand()) != null) {
                 ui.displayMsg(arn.getResponse(input));
-                if ("bye".equals(input.strip())) {
+                if (arn.isExitRequested()) {
                     break;
                 }
                 ui.displayMsg("");
             }
         } catch (StorageException e) {
-            LOGGER.log(Level.SEVERE, "Unable to start because task data could not be loaded", e);
+            LOGGER.log(Level.FINE, "Unable to start because task data could not be loaded", e);
             ui.displayMsg("Error: " + e.getMessage());
             return 1;
         }
@@ -55,6 +56,7 @@ public class Arn extends Application {
     }
 
     void initialize(TaskFileHandler storage) throws StorageException {
+        exitRequested = false;
         taskFileHandler = storage;
         taskList = new TaskList(storage.readTasks());
         gui = new Gui();
@@ -78,19 +80,21 @@ public class Arn extends Application {
             fxmlLoader.<MainWindow>getController().setArn(this);
             stage.show();
         } catch (IOException | StorageException | RuntimeException e) {
-            LOGGER.log(Level.SEVERE, "Unable to start Arn", e);
+            LOGGER.log(e instanceof StorageException ? Level.FINE : Level.SEVERE, "Unable to start Arn", e);
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Unable to start Arn");
             alert.setHeaderText("Arn could not start");
             alert.setContentText(e instanceof StorageException
                     ? e.getMessage()
-                    : "The application could not load its interface. Try downloading the release again.");
+                    : "The application could not load its interface. Try downloading the release again, "
+                            + "or use java -jar Arn.jar --cli to open the console.");
             alert.showAndWait();
             Platform.exit();
         }
     }
 
     public String getResponse(String input) {
+        exitRequested = false;
         gui.clearResponses();
         List<Task> previousTasks = taskList.getTasks();
         List<Boolean> previousStatuses = getTaskStatuses(previousTasks);
@@ -99,6 +103,7 @@ public class Arn extends Application {
             if (hasChanges(previousTasks, previousStatuses)) {
                 taskFileHandler.writeTasks(taskList.getTasks());
             }
+            exitRequested = gui.isExitRequested();
             return gui.getResponses();
         } catch (ArnException | StorageException e) {
             taskList = restoreTasks(previousTasks, previousStatuses);
@@ -106,6 +111,10 @@ public class Arn extends Application {
             gui.clearResponses();
             return "Error: " + e.getMessage();
         }
+    }
+
+    public boolean isExitRequested() {
+        return exitRequested;
     }
 
     private boolean hasChanges(List<Task> previousTasks, List<Boolean> previousStatuses) {

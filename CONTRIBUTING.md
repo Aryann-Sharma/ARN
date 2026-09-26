@@ -38,7 +38,7 @@ Add a regression test for a bug fix and update tests when behavior changes.
 
 `test` also generates the JaCoCo report. This report covers the tests run in that task; it excludes code executed by the separate processes in `jarSmokeTest`. Read the HTML reports under `build/reports/tests/test/`, `build/reports/tests/jarSmokeTest/`, and `build/reports/jacoco/test/html/`.
 
-The desktop test saves `desktop.png` and `desktop-small.png` under `build/reports/ui-smoke/`. Check both screenshots when changing layout or styling.
+The desktop test saves `desktop.png`, `desktop-small.png`, and `desktop-farewell.png` under `build/reports/ui-smoke/`. Check the normal window, minimum window, and farewell screenshots when changing layout or styling. The test also checks that `bye` leaves the farewell visible for three seconds before closing the app.
 
 Use temporary directories for test data. For storage changes, test failed saves and recovery as well as successful writes. For parser changes, include invalid input and successful commands. GUI tests should load the actual FXML and check behavior visible to the user.
 
@@ -55,7 +55,7 @@ CI runs checks on Windows, Linux, and Intel macOS. Linux uses Xvfb. Test reports
 ## Releasing
 
 1. Set the release version in `build.gradle` and finish the matching entry in [CHANGELOG.md](CHANGELOG.md). The packaged tests check the JAR against that version automatically.
-2. Run the full checks above and inspect both packaged GUI screenshots.
+2. Run the full checks above and inspect the packaged GUI screenshots.
 3. Check that `java -jar build/libs/Arn.jar --version` reports the intended version. Launch the desktop and `--cli` from a temporary working directory so they use test data.
 4. Merge the reviewed changes into `master`. Create and push an annotated `vX.Y.Z` tag for the release commit, then wait for all three CI jobs for that tag to pass.
 5. Download `Arn.jar` from the tagged run's `arn-application` artifact. Publish a GitHub release for the tag with the JAR, release notes, and an `Arn.jar.sha256` checksum file.

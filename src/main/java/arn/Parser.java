@@ -1,6 +1,7 @@
 package arn;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -9,6 +10,10 @@ import java.util.regex.Pattern;
  * then updates the task list and UI accordingly.
  */
 public final class Parser {
+    private static final List<String> COMMANDS = List.of(
+            "todo", "deadline", "event", "list", "mark", "unmark", "delete", "find", "sort", "bye");
+    private static final String DEADLINE_EXAMPLE = "deadline Submit report /by 2026-10-02 1800";
+    private static final String EVENT_EXAMPLE = "event Meeting /from 2026-10-02 1400 /to 2026-10-02 1500";
     private static final Pattern BY_CLAUSE = Pattern.compile("(?<!\\S)/by(?=\\s|$)", Pattern.UNICODE_CHARACTER_CLASS);
     private static final Pattern FROM_CLAUSE = Pattern.compile("(?<!\\S)/from(?=\\s|$)", Pattern.UNICODE_CHARACTER_CLASS);
     private static final Pattern TO_CLAUSE = Pattern.compile("(?<!\\S)/to(?=\\s|$)", Pattern.UNICODE_CHARACTER_CLASS);
@@ -26,13 +31,18 @@ public final class Parser {
 
     public void parse(String input) throws ArnException {
         if (input == null || input.isBlank()) {
-            throw new ArnException("Enter a command to continue.");
+            throw new ArnException("Enter a command, for example 'list' or 'todo Read a chapter'.");
         }
         if (input.contains("\n") || input.contains("\r")) {
             throw new ArnException("Enter one command on a single line.");
         }
 
         String command = input.strip();
+        String commandName = command.split("\\p{javaWhitespace}+", 2)[0];
+        if (List.of("list", "sort", "bye").contains(commandName) && !command.equals(commandName)) {
+            throw new ArnException("'" + commandName + "' does not take extra text. Enter just '"
+                    + commandName + "'.");
+        }
         if (command.equals("bye")) {
             ui.displayBye();
         } else if (command.equals("list")) {
@@ -54,7 +64,13 @@ public final class Parser {
         } else if (command.equals("sort")) {
             sortByDate();
         } else {
-            throw new ArnException("Sorry, not a valid command.");
+            String lowercaseName = commandName.toLowerCase(Locale.ROOT);
+            if (COMMANDS.contains(lowercaseName)) {
+                throw new ArnException("Command names are case-sensitive. Use '" + lowercaseName
+                        + "' instead of '" + commandName + "'.");
+            }
+            throw new ArnException("Unknown command '" + commandName + "'. Available commands: "
+                    + String.join(", ", COMMANDS) + ".");
         }
     }
 
@@ -71,9 +87,6 @@ public final class Parser {
     }
 
     private void mark(String input) throws ArnException {
-        if (input.equals("mark")) {
-            throw new ArnException("No task number provided to mark.");
-        }
         int i = parseTaskIndex(input, "mark");
         taskList.get(i).markAsDone();
         ui.displayMsg("Task marked as done:");
@@ -81,9 +94,6 @@ public final class Parser {
     }
 
     private void unmark(String input) throws ArnException {
-        if (input.equals("unmark")) {
-            throw new ArnException("No task number provided to unmark.");
-        }
         int i = parseTaskIndex(input, "unmark");
         taskList.get(i).markAsNotDone();
         ui.displayMsg("Task marked as not done:");
@@ -92,7 +102,7 @@ public final class Parser {
 
     private void todo(String input) throws ArnException {
         if (input.equals("todo")) {
-            throw new ArnException("Empty task description.");
+            throw new ArnException("Add a description after 'todo'. Example: todo Read a chapter");
         }
         String description = input.substring("todo".length()).strip();
         taskList.add(new Todo(description));
@@ -100,17 +110,15 @@ public final class Parser {
     }
 
     private void deadline(String input) throws ArnException {
-        int j = findClause(input, BY_CLAUSE, "deadline".length());
-        if (j == -1) {
-            throw new ArnException("Deadline task must have a '/by' clause.");
-        }
+        int j = requireClause(input, BY_CLAUSE, "/by", "deadline".length(), DEADLINE_EXAMPLE);
+        rejectRepeatedClause(input, BY_CLAUSE, "/by", j, DEADLINE_EXAMPLE);
         String description = input.substring("deadline".length(), j).strip();
         if (description.isEmpty()) {
-            throw new ArnException("Empty task description.");
+            throw new ArnException("Add a deadline description before '/by'. Example: " + DEADLINE_EXAMPLE);
         }
         String date = input.substring(j + 3).strip();
         if (date.isEmpty()) {
-            throw new ArnException("Empty date.");
+            throw new ArnException("Add a due date after '/by'. Example: " + DEADLINE_EXAMPLE);
         }
         Deadline deadline = new Deadline(description, date);
         taskList.add(deadline);
@@ -118,22 +126,29 @@ public final class Parser {
     }
 
     private void event(String input) throws ArnException {
-        int j = findClause(input, FROM_CLAUSE, "event".length());
-        int k = j == -1 ? -1 : findClause(input, TO_CLAUSE, j + "/from".length());
-        if (j == -1 || k == -1) {
-            throw new ArnException("Event task must have both '/from' and '/to' clauses.");
+        int j = requireClause(input, FROM_CLAUSE, "/from", "event".length(), EVENT_EXAMPLE);
+        int k = findClause(input, TO_CLAUSE, j + "/from".length());
+        if (k == -1) {
+            int earlierEnd = findClause(input, TO_CLAUSE, "event".length());
+            if (earlierEnd != -1 && earlierEnd < j) {
+                throw new ArnException("Put '/from' before '/to' so the start date comes first. Example: "
+                        + EVENT_EXAMPLE);
+            }
+            k = requireClause(input, TO_CLAUSE, "/to", j + "/from".length(), EVENT_EXAMPLE);
         }
+        rejectRepeatedClause(input, FROM_CLAUSE, "/from", j, EVENT_EXAMPLE);
+        rejectRepeatedClause(input, TO_CLAUSE, "/to", k, EVENT_EXAMPLE);
         String description = input.substring("event".length(), j).strip();
         if (description.isEmpty()) {
-            throw new ArnException("Empty task description.");
+            throw new ArnException("Add an event description before '/from'. Example: " + EVENT_EXAMPLE);
         }
         String startDate = input.substring(j + 5, k).strip();
         String endDate = input.substring(k + 3).strip();
         if (startDate.isEmpty()) {
-            throw new ArnException("Empty start date.");
+            throw new ArnException("Add a start date after '/from' and before '/to'. Example: " + EVENT_EXAMPLE);
         }
         if (endDate.isEmpty()) {
-            throw new ArnException("Empty end date.");
+            throw new ArnException("Add an end date after '/to'. Example: " + EVENT_EXAMPLE);
         }
         Event event = new Event(description, startDate, endDate);
         taskList.add(event);
@@ -141,9 +156,6 @@ public final class Parser {
     }
 
     private void delete(String input) throws ArnException {
-        if (input.equals("delete")) {
-            throw new ArnException("No task number provided to delete.");
-        }
         int i = parseTaskIndex(input, "delete");
         Task t = taskList.remove(i);
         ui.displayMsg("Task removed: " + t.toString());
@@ -152,11 +164,11 @@ public final class Parser {
     private void find(String input) throws ArnException {
         String keyword = input.substring(4).strip();
         if (keyword.isEmpty()) {
-            throw new ArnException("Empty keyword.");
+            throw new ArnException("Add text to search for after 'find'. Example: find report");
         }
         List<Task> matchList = taskList.find(keyword);
         if (matchList.isEmpty()) {
-            ui.displayMsg("Sorry, no matching tasks found.");
+            ui.displayMsg("No task descriptions contain '" + keyword + "'. Try another search or use 'list'.");
         } else {
             ui.displayMsg("Here are the matching tasks in your list:");
             List<Task> savedTasks = taskList.getTasks();
@@ -189,20 +201,46 @@ public final class Parser {
         return matcher.find(start) ? matcher.start() : -1;
     }
 
+    private int requireClause(String input, Pattern clause, String marker, int start, String example)
+            throws ArnException {
+        int index = findClause(input, clause, start);
+        if (index == -1) {
+            throw new ArnException("Use '" + marker + "' as a separate marker, with a space before it"
+                    + " and before the date. Example: " + example);
+        }
+        return index;
+    }
+
+    private void rejectRepeatedClause(String input, Pattern clause, String marker, int index, String example)
+            throws ArnException {
+        if (findClause(input, clause, index + marker.length()) != -1) {
+            throw new ArnException("Use '" + marker + "' only once. Example: " + example);
+        }
+    }
+
     private int parseTaskIndex(String input, String command) throws ArnException {
         String taskNumber = input.substring(command.length()).strip();
+        if (taskNumber.isEmpty()) {
+            throw new ArnException("Add a task number after '" + command + "'. Example: " + command
+                    + " 1. Use 'list' to see task numbers.");
+        }
         if (!taskNumber.matches("\\d+")) {
-            throw new ArnException("Task number must be a positive integer.");
+            throw invalidTaskNumber(command);
         }
 
         try {
             int oneBasedIndex = Integer.parseInt(taskNumber);
             if (oneBasedIndex < 1) {
-                throw new ArnException("Task number must be a positive integer.");
+                throw invalidTaskNumber(command);
             }
             return oneBasedIndex - 1;
         } catch (NumberFormatException e) {
-            throw new ArnException("Task number is too large.");
+            throw new ArnException("That task number is too large. Use 'list' to see the available task numbers.");
         }
+    }
+
+    private ArnException invalidTaskNumber(String command) {
+        return new ArnException("Enter one whole task number after '" + command
+                + "', starting at 1. Example: " + command + " 1. Use 'list' to see task numbers.");
     }
 }

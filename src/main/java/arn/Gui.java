@@ -5,6 +5,7 @@ import java.util.List;
 
 public class Gui extends Ui {
     private final List<String> responses;
+    private boolean exitRequested;
 
     public Gui() {
         super();
@@ -18,7 +19,12 @@ public class Gui extends Ui {
 
     @Override
     public void displayBye() {
-        responses.add("Bye. Hope to see you again soon!");
+        super.displayBye();
+        exitRequested = true;
+    }
+
+    boolean isExitRequested() {
+        return exitRequested;
     }
 
     public String getResponses() {
@@ -29,5 +35,6 @@ public class Gui extends Ui {
 
     public void clearResponses() {
         responses.clear();
+        exitRequested = false;
     }
 }

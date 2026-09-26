@@ -42,11 +42,15 @@ See the [user guide](docs/README.md) for command examples and help with save fil
 | Delete a task | `delete 1` |
 | Search descriptions | `find report` |
 | Show dated tasks chronologically | `sort` |
-| Display a farewell; exit in console mode | `bye` |
+| Close the app | `bye` |
 
 Command names are lowercase and case-sensitive; searches ignore letter case. Dates use `YYYY-MM-DD` or `YYYY-MM-DD HHMM`, with 24-hour time. Invalid dates such as `2026-02-30` are rejected. An event's start and end must both include a time or both omit it, and the end cannot be earlier than the start.
 
 `find` and `sort` use the current task numbers from `list`, so you can use those numbers with `mark`, `unmark`, and `delete`. These views do not change the list order. Deleting a task renumbers the tasks after it.
+
+Error messages explain what needs correcting and include an example where useful. Date errors distinguish an incorrect format, a date that does not exist, and an invalid time. Keep spaces around `/by`, `/from`, and `/to`.
+
+In the desktop app, `bye` shows a farewell for three seconds and then closes the window. Commands and quick actions are disabled during that pause. In the console, `bye` exits immediately after the farewell. Each successful change has already been saved.
 
 ## Local storage
 

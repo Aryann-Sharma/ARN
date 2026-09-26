@@ -1,5 +1,6 @@
 package arn;
 
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -9,6 +10,8 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.VBox;
+import javafx.stage.Window;
+import javafx.util.Duration;
 
 public class MainWindow extends AnchorPane {
     @FXML
@@ -21,8 +24,15 @@ public class MainWindow extends AnchorPane {
     Button sendButton;
     @FXML
     Label taskCountLabel;
+    @FXML
+    Button listButton;
+    @FXML
+    Button sortButton;
+    @FXML
+    Button examplesButton;
 
     private Arn arn;
+    private boolean exiting;
 
     private final Image arnImage = new Image(this.getClass().getResourceAsStream("/images/ArnLogo.png"));
     private final Image userImage = new Image(this.getClass().getResourceAsStream("/images/ArnUser.png"));
@@ -59,6 +69,9 @@ public class MainWindow extends AnchorPane {
 
     @FXML
     private void handleShowExamples() {
+        if (exiting) {
+            return;
+        }
         addDialogs(DialogBox.getArnDialog(
                 "Here are a few things you can ask me:\n\n"
                         + "todo Read a chapter\n"
@@ -70,6 +83,9 @@ public class MainWindow extends AnchorPane {
     }
 
     private void submitCommand(String rawInput, boolean clearInputOnSuccess) {
+        if (exiting) {
+            return;
+        }
         String input = rawInput == null ? "" : rawInput.trim();
         if (input.isEmpty()) {
             userInput.requestFocus();
@@ -78,6 +94,9 @@ public class MainWindow extends AnchorPane {
 
         String response = arn.getResponse(input);
         boolean isError = response.startsWith("Error:");
+        if (arn.isExitRequested()) {
+            response += "\nClosing in 3 seconds.";
+        }
         addDialogs(
                 DialogBox.getUserDialog(input, userImage),
                 isError
@@ -88,7 +107,29 @@ public class MainWindow extends AnchorPane {
             userInput.clear();
         }
         updateTaskCount();
-        userInput.requestFocus();
+        if (arn.isExitRequested()) {
+            closeAfterFarewell();
+        } else {
+            userInput.requestFocus();
+        }
+    }
+
+    private void closeAfterFarewell() {
+        exiting = true;
+        userInput.setDisable(true);
+        sendButton.setDisable(true);
+        listButton.setDisable(true);
+        sortButton.setDisable(true);
+        examplesButton.setDisable(true);
+
+        Window window = userInput.getScene() == null ? null : userInput.getScene().getWindow();
+        PauseTransition pause = new PauseTransition(Duration.seconds(3));
+        pause.setOnFinished(event -> {
+            if (window != null) {
+                window.hide();
+            }
+        });
+        pause.play();
     }
 
     private void addDialogs(DialogBox... dialogs) {

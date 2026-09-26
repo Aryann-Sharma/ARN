@@ -1,6 +1,7 @@
 package arn;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -9,6 +10,7 @@ import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -21,12 +23,16 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.text.Text;
+import javafx.stage.Stage;
 
 public class MainWindowTest {
     @BeforeAll
     public static void startJavaFx() throws InterruptedException {
         CountDownLatch toolkitStarted = new CountDownLatch(1);
-        Platform.startup(toolkitStarted::countDown);
+        Platform.startup(() -> {
+            Platform.setImplicitExit(false);
+            toolkitStarted.countDown();
+        });
         assertTrue(toolkitStarted.await(10, TimeUnit.SECONDS), "JavaFX toolkit did not start");
     }
 
@@ -110,7 +116,9 @@ public class MainWindowTest {
             assertEquals("0 tasks saved locally", controller.taskCountLabel.getText());
             DialogBox errorMessage = (DialogBox) controller.dialogContainer.getChildren().get(2);
             assertTrue(errorMessage.getStyleClass().contains("error-dialog"));
-            assertEquals("Error: Could not save tasks.", errorMessage.dialog.getText());
+            assertTrue(errorMessage.dialog.getText().startsWith("Error: Could not save tasks to "));
+            assertTrue(errorMessage.dialog.getText().contains(tempDir.toString()));
+            assertTrue(errorMessage.dialog.getText().contains("directory"));
             assertEquals("todo should not be retained", controller.userInput.getText());
             return null;
         });
@@ -218,6 +226,67 @@ public class MainWindowTest {
             assertEquals("Command", controller.userInput.getAccessibleText());
             return null;
         });
+    }
+
+    @Test
+    public void byeShowsFarewellThenClosesOnlyItsWindow(@TempDir Path tempDir) throws Exception {
+        WindowFixture window = runOnFxThread(() -> createWindow(tempDir));
+        Stage stage = runOnFxThread(Stage::new);
+        CountDownLatch hidden = new CountDownLatch(1);
+        AtomicLong submittedAt = new AtomicLong();
+        AtomicLong hiddenAt = new AtomicLong();
+        try {
+            runOnFxThread(() -> {
+                stage.setScene(window.root.getScene());
+                stage.setOnHidden(event -> {
+                    hiddenAt.set(System.nanoTime());
+                    hidden.countDown();
+                });
+                stage.show();
+                MainWindow controller = window.controller;
+                controller.userInput.setText("bye now");
+                controller.sendButton.fire();
+                assertTrue(stage.isShowing());
+                assertFalse(controller.userInput.isDisabled());
+                assertEquals("bye now", controller.userInput.getText());
+                DialogBox error = (DialogBox) controller.dialogContainer.getChildren().get(2);
+                assertTrue(error.getStyleClass().contains("error-dialog"));
+
+                submittedAt.set(System.nanoTime());
+                controller.userInput.setText("  bye  ");
+                controller.sendButton.fire();
+                assertTrue(stage.isShowing(), "The farewell must be visible before closing");
+                DialogBox farewell = (DialogBox) controller.dialogContainer.getChildren().get(4);
+                assertEquals("Bye. Hope to see you again soon!\nClosing in 3 seconds.", farewell.dialog.getText());
+                assertTrue(controller.userInput.isDisabled());
+                assertTrue(controller.sendButton.isDisabled());
+                assertTrue(controller.listButton.isDisabled());
+                assertTrue(controller.sortButton.isDisabled());
+                assertTrue(controller.examplesButton.isDisabled());
+
+                controller.userInput.setText("todo Too late");
+                controller.userInput.fireEvent(new javafx.event.ActionEvent());
+                controller.listButton.fire();
+                controller.examplesButton.fire();
+                assertEquals(5, controller.dialogContainer.getChildren().size());
+                assertEquals("0 tasks saved locally", controller.taskCountLabel.getText());
+                return null;
+            });
+            assertFalse(hidden.await(1, TimeUnit.SECONDS), "Farewell closed too soon");
+            assertTrue(hidden.await(10, TimeUnit.SECONDS), "The window did not close after farewell");
+            assertTrue(hiddenAt.get() - submittedAt.get() >= TimeUnit.MILLISECONDS.toNanos(2800),
+                    "The farewell should remain visible for three seconds");
+            runOnFxThread(() -> {
+                assertFalse(stage.isShowing());
+                assertEquals("0 tasks saved locally", window.controller.taskCountLabel.getText());
+                return null;
+            });
+        } finally {
+            runOnFxThread(() -> {
+                stage.hide();
+                return null;
+            });
+        }
     }
 
     private WindowFixture createWindow(Path tempDir) throws java.io.IOException {

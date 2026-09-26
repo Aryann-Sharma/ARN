@@ -32,14 +32,18 @@ public class EventTest {
 
     @Test
     public void testEndDateBeforeStartDateThrowsException() {
-        assertThrows(ArnException.class,
+        ArnException error = assertThrows(ArnException.class,
                 () -> new Event("backwards", "2025-10-03", "2025-10-01"));
+        assertEquals("Event end '2025-10-01' is before its start '2025-10-03'. "
+                + "Set the end to the start or later.", error.getMessage());
     }
 
     @Test
     public void testEndTimeBeforeStartTimeThrowsException() {
-        assertThrows(ArnException.class,
+        ArnException error = assertThrows(ArnException.class,
                 () -> new Event("backwards", "2025-10-01 1400", "2025-10-01 1200"));
+        assertEquals("Event end '2025-10-01 1200' is before its start '2025-10-01 1400'. "
+                + "Set the end to the start or later.", error.getMessage());
     }
 
     @Test
@@ -56,9 +60,11 @@ public class EventTest {
     public void testMixedDateAndTimeFormatsHaveASpecificError() {
         ArnException error = assertThrows(ArnException.class,
                 () -> new Event("meeting", "2026-10-01", "2026-10-01 1200"));
-        assertEquals("Event start and end must both include a time or both omit it.", error.getMessage());
-        assertThrows(ArnException.class,
+        assertEquals("Event start and end use different formats. "
+                + "Include a time in both the start and end, or omit both times.", error.getMessage());
+        ArnException reversed = assertThrows(ArnException.class,
                 () -> new Event("meeting", "2026-10-01 1200", "2026-10-02"));
+        assertEquals(error.getMessage(), reversed.getMessage());
     }
 
     @Test
@@ -71,5 +77,57 @@ public class EventTest {
         assertEquals("2024-02-29 0000", midnight.formatStartDate(false));
         assertEquals("2024-02-29 0000", midnight.formatEndDate(false));
         assertEquals(dateOnly.getDate(), midnight.getDate());
+    }
+
+    @Test
+    public void testDateFormatErrorsIdentifyTheRelevantEndpoint() {
+        ArnException start = assertThrows(ArnException.class,
+                () -> new Event("meeting", "2026/10/01", "2026-10-02"));
+        ArnException end = assertThrows(ArnException.class,
+                () -> new Event("meeting", "2026-10-01", "2026/10/02"));
+
+        assertEquals("Event start date has an invalid format. Use YYYY-MM-DD or YYYY-MM-DD HHMM, "
+                + "for example 2026-10-02 1800.", start.getMessage());
+        assertEquals("Event end date has an invalid format. Use YYYY-MM-DD or YYYY-MM-DD HHMM, "
+                + "for example 2026-10-02 1800.", end.getMessage());
+    }
+
+    @Test
+    public void testCalendarDateErrorsIdentifyTheRelevantEndpoint() {
+        ArnException start = assertThrows(ArnException.class,
+                () -> new Event("meeting", "2026-02-30", "2026-10-02"));
+        ArnException end = assertThrows(ArnException.class,
+                () -> new Event("meeting", "2026-01-01", "2026-02-30"));
+
+        assertEquals("Event start date '2026-02-30' does not exist. Check the year, month, and day.",
+                start.getMessage());
+        assertEquals("Event end date '2026-02-30' does not exist. Check the year, month, and day.",
+                end.getMessage());
+    }
+
+    @Test
+    public void testTimeErrorsIdentifyTheRelevantEndpoint() {
+        ArnException start = assertThrows(ArnException.class,
+                () -> new Event("meeting", "2026-10-01 2400", "2026-10-02 0900"));
+        ArnException end = assertThrows(ArnException.class,
+                () -> new Event("meeting", "2026-10-01 0900", "2026-10-02 1260"));
+
+        assertEquals("Event start time '2400' is invalid. Use HHMM with hours 00-23 and minutes 00-59.",
+                start.getMessage());
+        assertEquals("Event end time '1260' is invalid. Use HHMM with hours 00-23 and minutes 00-59.",
+                end.getMessage());
+    }
+
+    @Test
+    public void testMissingDatesIdentifyTheRelevantEndpoint() {
+        ArnException start = assertThrows(ArnException.class,
+                () -> new Event("meeting", null, "2026-10-02"));
+        ArnException end = assertThrows(ArnException.class,
+                () -> new Event("meeting", "2026-10-01", ""));
+
+        assertEquals("Event start date is required. Use YYYY-MM-DD or YYYY-MM-DD HHMM, "
+                + "for example 2026-10-02 1800.", start.getMessage());
+        assertEquals("Event end date is required. Use YYYY-MM-DD or YYYY-MM-DD HHMM, "
+                + "for example 2026-10-02 1800.", end.getMessage());
     }
 }

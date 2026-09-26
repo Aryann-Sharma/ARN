@@ -8,12 +8,12 @@ public class Task {
     private boolean isDone;
 
     public Task(String description) {
-        Objects.requireNonNull(description, "description");
+        Objects.requireNonNull(description, "Task description is required. Add a short description of the task.");
         if (description.isBlank()) {
-            throw new IllegalArgumentException("Task description cannot be blank.");
+            throw new IllegalArgumentException("Task description is required. Add a short description of the task.");
         }
         if (description.contains("\n") || description.contains("\r")) {
-            throw new IllegalArgumentException("Task description must be on one line.");
+            throw new IllegalArgumentException("Task description must be on one line. Remove any line breaks.");
         }
         this.description = description.strip();
         this.isDone = false;

@@ -3,9 +3,11 @@ package arn;
 import java.awt.image.BufferedImage;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.TimeUnit;
 
 import javax.imageio.ImageIO;
 
+import javafx.animation.PauseTransition;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.control.Button;
@@ -13,14 +15,20 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.image.PixelFormat;
 import javafx.scene.image.WritableImage;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 /** Opens the desktop from the packaged resources in an isolated process. */
 public final class PackagedGuiProbe {
     private static Throwable failure;
+    private static boolean closedAfterBye;
 
     public static void main(String[] args) {
         Application.launch(Window.class, args);
+        if (failure == null && !closedAfterBye) {
+            failure = new AssertionError("The desktop did not close through its bye command");
+        }
         if (failure != null) {
             failure.printStackTrace();
             System.exit(1);
@@ -62,9 +70,9 @@ public final class PackagedGuiProbe {
                 Platform.runLater(() -> {
                     try {
                         snapshot(stage, output.resolve("desktop-small.png"));
+                        verifyFarewell(stage, output);
                     } catch (Throwable error) {
                         failure = error;
-                    } finally {
                         stage.close();
                         Platform.exit();
                     }
@@ -74,6 +82,58 @@ public final class PackagedGuiProbe {
                 stage.close();
                 Platform.exit();
             }
+        }
+
+        private void verifyFarewell(Stage stage, Path output) {
+            TextField input = (TextField) stage.getScene().lookup("#userInput");
+            Button send = (Button) stage.getScene().lookup("#sendButton");
+            input.setText("bye now");
+            send.fire();
+            require(stage.isShowing() && !input.isDisabled(), "Malformed bye must leave the desktop usable");
+            require("bye now".equals(input.getText()), "Malformed bye should remain editable");
+
+            long submittedAt = System.nanoTime();
+            stage.setOnHidden(event -> {
+                try {
+                    require(System.nanoTime() - submittedAt >= TimeUnit.MILLISECONDS.toNanos(2800),
+                            "The desktop closed before the three-second farewell finished");
+                    closedAfterBye = true;
+                } catch (Throwable error) {
+                    failure = error;
+                }
+            });
+            input.setText("bye");
+            send.fire();
+            require(stage.isShowing(), "The farewell should be visible before closing");
+            require(input.isDisabled() && send.isDisabled(), "Command input must be disabled while exiting");
+            for (String id : new String[] {"listButton", "sortButton", "examplesButton"}) {
+                require(stage.getScene().lookup("#" + id).isDisabled(), "Quick actions must be disabled while exiting");
+            }
+            VBox conversation = (VBox) stage.getScene().lookup("#dialogContainer");
+            DialogBox farewell = (DialogBox) conversation.getChildren().get(conversation.getChildren().size() - 1);
+            require(farewell.dialog.getText().equals("Bye. Hope to see you again soon!\nClosing in 3 seconds."),
+                    "Desktop farewell or closing notice is missing");
+
+            PauseTransition visibleCheck = new PauseTransition(Duration.seconds(1));
+            visibleCheck.setOnFinished(event -> {
+                try {
+                    require(stage.isShowing(), "The farewell must remain visible for more than one second");
+                    snapshot(stage, output.resolve("desktop-farewell.png"));
+                } catch (Throwable error) {
+                    failure = error;
+                    stage.close();
+                    Platform.exit();
+                }
+            });
+            visibleCheck.play();
+
+            PauseTransition timeout = new PauseTransition(Duration.seconds(8));
+            timeout.setOnFinished(event -> {
+                failure = new AssertionError("The desktop did not exit after bye");
+                stage.close();
+                Platform.exit();
+            });
+            timeout.play();
         }
 
         private void snapshot(Stage stage, Path output) throws Exception {

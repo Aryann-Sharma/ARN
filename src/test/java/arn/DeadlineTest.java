@@ -85,4 +85,41 @@ public class DeadlineTest {
             assertEquals(deadline.getDate(), new Deadline("report", deadline.formatDate(false)).getDate());
         }
     }
+
+    @Test
+    public void testMalformedDateExplainsTheRequiredFormat() {
+        for (String input : List.of("2026/10/02", "2026-10-02 09:00", "2026-10-2")) {
+            ArnException error = assertThrows(ArnException.class, () -> new Deadline("report", input));
+            assertEquals("Deadline due date has an invalid format. Use YYYY-MM-DD or YYYY-MM-DD HHMM, "
+                    + "for example 2026-10-02 1800.", error.getMessage());
+        }
+    }
+
+    @Test
+    public void testNonexistentDateIsNotReportedAsAFormatError() {
+        for (String input : List.of("2026-02-30", "2026-02-30 0900", "2026-02-30 2400")) {
+            ArnException error = assertThrows(ArnException.class, () -> new Deadline("report", input));
+            assertEquals("Deadline due date '2026-02-30' does not exist. Check the year, month, and day.",
+                    error.getMessage());
+        }
+    }
+
+    @Test
+    public void testInvalidTimeExplainsTheHourAndMinuteLimits() {
+        for (String time : List.of("2400", "2360", "1260", "9999")) {
+            ArnException error = assertThrows(ArnException.class,
+                    () -> new Deadline("report", "2026-10-02 " + time));
+            assertEquals("Deadline due time '" + time
+                    + "' is invalid. Use HHMM with hours 00-23 and minutes 00-59.", error.getMessage());
+        }
+    }
+
+    @Test
+    public void testMissingDueDateIsIdentified() {
+        for (String input : new String[]{null, "", " \t"}) {
+            ArnException error = assertThrows(ArnException.class, () -> new Deadline("report", input));
+            assertEquals("Deadline due date is required. Use YYYY-MM-DD or YYYY-MM-DD HHMM, "
+                    + "for example 2026-10-02 1800.", error.getMessage());
+        }
+    }
 }

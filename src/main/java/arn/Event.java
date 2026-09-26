@@ -18,18 +18,20 @@ public final class Event extends Task {
      * @param description description of the event
      * @param startDate start date of the event
      * @param endDate end date of the event
-     * @throws ArnException if the date formats are invalid
+     * @throws ArnException if a date is invalid, the formats differ, or the end precedes the start
      */
     public Event(String description, String startDate, String endDate) throws ArnException {
         super(description);
-        this.startDate = TaskDate.parse(startDate);
-        this.endDate = TaskDate.parse(endDate);
+        this.startDate = TaskDate.parse(startDate, "Event start");
+        this.endDate = TaskDate.parse(endDate, "Event end");
         if (this.startDate.hasTime() != this.endDate.hasTime()) {
-            throw new ArnException("Event start and end must both include a time or both omit it.");
+            throw new ArnException("Event start and end use different formats. "
+                    + "Include a time in both the start and end, or omit both times.");
         }
 
         if (this.endDate.getValue().isBefore(this.startDate.getValue())) {
-            throw new ArnException("Event end date must not be before its start date.");
+            throw new ArnException("Event end '" + this.endDate.format(false) + "' is before its start '"
+                    + this.startDate.format(false) + "'. Set the end to the start or later.");
         }
     }
 
