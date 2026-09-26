@@ -77,7 +77,10 @@ public class Arn extends Application {
             scene.getStylesheets().add(Arn.class.getResource("/styles/main.css").toExternalForm());
             stage.setScene(scene);
             stage.setTitle("Arn — Your task assistant");
-            stage.getIcons().add(new Image(Arn.class.getResourceAsStream("/images/ArnLogo.png")));
+            String iconUrl = Arn.class.getResource("/images/ArnTaskbar.png").toExternalForm();
+            for (int size : new int[] {16, 32, 48, 64, 128, 256}) {
+                stage.getIcons().add(new Image(iconUrl, size, size, true, true));
+            }
             stage.setMinWidth(560);
             stage.setMinHeight(640);
             fxmlLoader.<MainWindow>getController().setArn(this);

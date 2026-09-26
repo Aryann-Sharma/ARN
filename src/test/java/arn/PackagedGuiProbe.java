@@ -15,6 +15,7 @@ import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.image.ImageView;
 import javafx.scene.image.PixelFormat;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.VBox;
@@ -55,6 +56,12 @@ public final class PackagedGuiProbe {
                 TextField input = (TextField) stage.getScene().lookup("#userInput");
                 Button send = (Button) stage.getScene().lookup("#sendButton");
                 Label count = (Label) stage.getScene().lookup("#taskCountLabel");
+                Path output = Path.of(getParameters().getRaw().get(0));
+                Files.createDirectories(output);
+                snapshot(stage, output.resolve("desktop-welcome.png"));
+                require(!stage.getIcons().isEmpty()
+                                && stage.getIcons().stream().noneMatch(image -> image.isError()),
+                        "Window icons did not load from the packaged app");
                 input.setText("todo Review the desktop release");
                 send.fire();
                 require("1 task saved locally".equals(count.getText()), "Task count was not updated");
@@ -72,8 +79,6 @@ public final class PackagedGuiProbe {
                 require(!input.getText().isEmpty(), "Invalid command was not retained for correction");
                 require(Files.readString(Path.of("data/arn.txt")).contains("Review the desktop release"),
                         "Desktop command was not saved");
-                Path output = Path.of(getParameters().getRaw().get(0));
-                Files.createDirectories(output);
                 // Let the submitted response finish scrolling before checking its visible bounds.
                 Platform.runLater(() -> verifyLayout(stage, output, false));
             } catch (Throwable error) {
@@ -86,6 +91,19 @@ public final class PackagedGuiProbe {
         private void verifyLayout(Stage stage, Path output, boolean smallWindow) {
             try {
                 snapshot(stage, output.resolve(smallWindow ? "desktop-small.png" : "desktop.png"));
+                ImageView logo = (ImageView) stage.getScene().lookup("#headerLogo");
+                require(logo.getImage() != null && !logo.getImage().isError(), "Header logo did not load");
+                Node title = stage.getScene().lookup(".app-title");
+                Node subtitle = stage.getScene().lookup(".app-subtitle");
+                Node count = stage.getScene().lookup("#taskCountLabel");
+                Bounds logoBounds = logo.localToScene(logo.getLayoutBounds());
+                Bounds titleBounds = title.localToScene(title.getLayoutBounds());
+                Bounds subtitleBounds = subtitle.localToScene(subtitle.getLayoutBounds());
+                Bounds countBounds = count.localToScene(count.getLayoutBounds());
+                require(logoBounds.getMaxX() <= titleBounds.getMinX()
+                                && subtitleBounds.getMaxX() <= countBounds.getMinX()
+                                && countBounds.getMaxX() <= stage.getScene().getWidth(),
+                        "The larger logo crowds the header text");
                 VBox conversation = (VBox) stage.getScene().lookup("#dialogContainer");
                 Node response = conversation.getChildren().get(conversation.getChildren().size() - 1);
                 Node viewport = stage.getScene().lookup(".conversation-scroll .viewport");

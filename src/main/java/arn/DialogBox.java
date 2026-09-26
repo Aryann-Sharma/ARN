@@ -37,6 +37,8 @@ public class DialogBox extends HBox {
     }
 
     public void flip() {
+        displayPicture.setFitWidth(48);
+        displayPicture.setFitHeight(48);
         ObservableList<Node> tmp = FXCollections.observableArrayList(this.getChildren());
         Collections.reverse(tmp);
         getChildren().setAll(tmp);

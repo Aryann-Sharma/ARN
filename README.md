@@ -18,6 +18,8 @@ Use **Java 17 for x64 Windows, Linux, or Intel macOS**. The runnable JAR include
 
 Type a command and press **Enter** or select **Send**. Quick actions show your tasks, sort dated tasks, or display examples. Quick actions preserve anything you are typing, and failed commands remain in the input field for correction.
 
+The blue robot on a light tile identifies Arn in the header, replies, and taskbar. The compact icon stays recognizable at small sizes, while the larger header logo stands out against the blue background.
+
 A console interface is also available:
 
 ```bash

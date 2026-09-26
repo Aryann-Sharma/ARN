@@ -26,9 +26,10 @@
             <children>
                 <HBox alignment="CENTER_LEFT" spacing="14.0" styleClass="app-header">
                     <children>
-                        <ImageView fitHeight="52.0" fitWidth="82.0" pickOnBounds="true" preserveRatio="true">
+                        <ImageView fx:id="headerLogo" accessibleText="Arn logo" fitHeight="64.0" fitWidth="64.0"
+                                   pickOnBounds="true" preserveRatio="true" smooth="true">
                             <image>
-                                <Image url="@../images/ArnLogo.png" />
+                                <Image url="@../images/ArnTaskbar.png" />
                             </image>
                         </ImageView>
                         <VBox spacing="2.0">

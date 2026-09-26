@@ -1,6 +1,6 @@
 # Arn User Guide
 
-![Arn logo](../src/main/resources/images/ArnLogo.png)
+<img src="../src/main/resources/images/ArnTaskbar.png" alt="Arn robot logo" width="96" height="96">
 
 Arn keeps todos, deadlines, and events in a local task list. You can use the desktop interface or enter the same commands in a terminal.
 
@@ -21,6 +21,8 @@ Type in the input field and press **Enter** or select **Send**. The quick action
 - **Examples** shows sample commands.
 
 The header shows how many tasks are saved. Quick actions preserve your unfinished input. If a command fails, its text stays in the input field so you can correct or retry it. Empty input does not change the task count. New responses, including wrapped error messages, scroll into view automatically. Resizing the window while reading older messages does not force you to the bottom.
+
+Look for the blue robot on a light tile in the header, beside Arn's replies, and in the taskbar. The taskbar icon uses the robot without lettering so it is easier to recognize at small sizes. Its displayed size is controlled by your operating system and display settings.
 
 ## Command and date rules
 
