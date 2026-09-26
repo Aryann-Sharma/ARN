@@ -1,7 +1,7 @@
 package arn;
-import java.time.DateTimeException;
-import java.time.LocalDateTime;
+
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
@@ -9,9 +9,9 @@ import java.time.format.DateTimeParseException;
  * Represents a task of type Event with a description, a start date, and end date.
  *
  */
-public class Event extends Task {
-    protected LocalDateTime startDate;
-    protected LocalDateTime endDate;
+public final class Event extends Task {
+    private LocalDateTime startDate;
+    private LocalDateTime endDate;
     private boolean hasTime = true;
 
 
@@ -40,7 +40,7 @@ public class Event extends Task {
                 this.endDate = d2.atStartOfDay();
                 this.hasTime = false;
             } catch (DateTimeParseException e2) {
-                throw new ArnException("Invalid date format. Use yyyy-mm-dd or yyyy-mm-dd hhmm.");
+                throw new ArnException("Invalid date format. Use YYYY-MM-DD or YYYY-MM-DD HHMM.");
             }
         }
 
@@ -84,7 +84,7 @@ public class Event extends Task {
 
     @Override
     public String toString() {
-        return "[" + this.getType() + "][" + this.getStatusIcon() + "] " + description + " (from " +
+        return "[" + this.getType() + "][" + this.getStatusIcon() + "] " + getDescription() + " (from " +
                 this.formatStartDate(true) + " to " + this.formatEndDate(true) + ")";
     }
 }

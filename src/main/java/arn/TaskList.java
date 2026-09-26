@@ -1,27 +1,29 @@
 package arn;
+
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 
 /**
  * Represents a list of tasks.
  */
 
-public class TaskList {
-    protected ArrayList<Task> taskList;
+public final class TaskList {
+    private final List<Task> taskList;
 
     /**
      * Constructs a TaskList with an initial set of tasks.
      *
      * @param taskList the list of tasks to initialize with
      */
-    public TaskList(ArrayList<Task> taskList) {
-        assert taskList != null : "task list must not be null";
-        this.taskList = taskList;
+    public TaskList(List<Task> taskList) {
+        this.taskList = new ArrayList<>(Objects.requireNonNull(taskList, "taskList"));
     }
 
-    public ArrayList<Task> get() {
-        return taskList;
+    public List<Task> getTasks() {
+        return List.copyOf(taskList);
     }
-
 
     /**
      * Retrieves a task at the specified index.
@@ -31,7 +33,7 @@ public class TaskList {
      */
     public Task get(int index) throws ArnException {
         if (index < 0 || index >= taskList.size()) {
-            throw new ArnException("Invalid task number");
+            throw new ArnException("Invalid task number.");
         }
         return taskList.get(index);
     }
@@ -42,9 +44,8 @@ public class TaskList {
      * @param task the task to add
      */
     public void add(Task task) {
-        taskList.add(task);
+        taskList.add(Objects.requireNonNull(task, "task"));
     }
-
 
     /**
      * Removes a task at the specified index.
@@ -54,7 +55,7 @@ public class TaskList {
      */
     public Task remove(int index) throws ArnException {
         if (index < 0 || index >= taskList.size()) {
-            throw new ArnException("Invalid task number");
+            throw new ArnException("Invalid task number.");
         }
         return taskList.remove(index);
     }
@@ -65,19 +66,20 @@ public class TaskList {
      * @param keyword the keyword to search for
      * @return a list of matching tasks
      */
-    public ArrayList<Task> find(String keyword) {
-        ArrayList<Task> matchList = new ArrayList<>();
+    public List<Task> find(String keyword) {
+        String normalizedKeyword = keyword.toLowerCase(Locale.ROOT);
+        List<Task> matchList = new ArrayList<>();
         for (Task task : taskList) {
-            if (task.description.toLowerCase().contains(keyword.toLowerCase())) {
+            if (task.getDescription().toLowerCase(Locale.ROOT).contains(normalizedKeyword)) {
                 matchList.add(task);
             }
         }
         return matchList;
     }
 
-    public ArrayList<Task> sortByDate() {
-        ArrayList<Task> sortList = new ArrayList<>();
-        for (Task task: taskList) {
+    public List<Task> sortByDate() {
+        List<Task> sortList = new ArrayList<>();
+        for (Task task : taskList) {
             if (task.getDate() != null) {
                 sortList.add(task);
             }
@@ -90,5 +92,4 @@ public class TaskList {
     public int size() {
         return taskList.size();
     }
-
 }

@@ -4,7 +4,7 @@ package arn;
  * A type of Task.
  * Each task of Todo type has a description and a status indicating whether it is completed.
  */
-public class Todo extends Task {
+public final class Todo extends Task {
     public Todo(String description) {
         super(description);
     }
@@ -20,6 +20,6 @@ public class Todo extends Task {
      */
     @Override
     public String toString() {
-        return "[" + this.getType() + "][" + this.getStatusIcon() + "] " + this.description;
+        return "[" + this.getType() + "][" + this.getStatusIcon() + "] " + this.getDescription();
     }
 }

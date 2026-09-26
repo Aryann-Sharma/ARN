@@ -16,9 +16,9 @@ import javafx.scene.layout.HBox;
 public class DialogBox extends HBox {
 
     @FXML
-    protected Label dialog;
+    Label dialog;
     @FXML
-    protected ImageView displayPicture;
+    ImageView displayPicture;
 
     public DialogBox(String text, Image img, String roleStyleClass) {
         try {
@@ -27,7 +27,7 @@ public class DialogBox extends HBox {
             fxmlLoader.setRoot(this);
             fxmlLoader.load();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Unable to load the dialog layout.", e);
         }
 
         dialog.setText(text);
@@ -43,19 +43,19 @@ public class DialogBox extends HBox {
         setAlignment(Pos.TOP_LEFT);
     }
 
-    public static DialogBox getUserDialog(String s, Image i) {
-        return new DialogBox(s, i, "user-dialog");
+    public static DialogBox getUserDialog(String text, Image image) {
+        return new DialogBox(text, image, "user-dialog");
     }
 
-    public static DialogBox getArnDialog(String s, Image i) {
-        var db = new DialogBox(s, i, "arn-dialog");
-        db.flip();
-        return db;
+    public static DialogBox getArnDialog(String text, Image image) {
+        DialogBox dialogBox = new DialogBox(text, image, "arn-dialog");
+        dialogBox.flip();
+        return dialogBox;
     }
 
-    public static DialogBox getErrorDialog(String s, Image i) {
-        var db = new DialogBox(s, i, "error-dialog");
-        db.flip();
-        return db;
+    public static DialogBox getErrorDialog(String text, Image image) {
+        DialogBox dialogBox = new DialogBox(text, image, "error-dialog");
+        dialogBox.flip();
+        return dialogBox;
     }
 }

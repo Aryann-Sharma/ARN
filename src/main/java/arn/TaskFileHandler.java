@@ -1,86 +1,112 @@
 package arn;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
+import java.util.List;
+import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
- * Handles reading from and writing to the task save data file.
- * <p>
- * Provides persistent storage so that tasks are saved
- * between runs of the application.
+ * Reads and writes task data using a small, versioned text format.
  */
-public class TaskFileHandler {
-    protected String filePath;
+public final class TaskFileHandler {
+    static final String DATA_HEADER = "# Arn data v1";
 
-    /**
-     * Constructs a TaskFileHandler with the given file path.
-     *
-     * @param filePath the path to the data file
-     */
+    private static final Logger LOGGER = Logger.getLogger(TaskFileHandler.class.getName());
+
+    private final Path filePath;
+
     public TaskFileHandler(String filePath) {
-        this.filePath = filePath;
+        this(Path.of(filePath));
     }
 
+    public TaskFileHandler(Path filePath) {
+        this.filePath = Objects.requireNonNull(filePath, "filePath").toAbsolutePath().normalize();
+    }
 
     /**
-     * Reads tasks from the data file.
+     * Loads all valid tasks. Legacy files without a version header remain supported.
+     * Malformed records are skipped and logged with their line number.
      *
-     * @return the list of tasks loaded from storage
+     * @return tasks loaded from storage
+     * @throws StorageException if the file itself cannot be read
      */
-    public ArrayList<Task> readTasks() {
-        ArrayList<Task> taskList = new ArrayList<>();
-        File file = new File(filePath);
-        BufferedReader br = null;
+    public List<Task> readTasks() throws StorageException {
+        List<Task> tasks = new ArrayList<>();
         try {
-            if (!file.exists()) {
-                file.getParentFile().mkdirs();
-                file.createNewFile();
-                System.out.println("(New save file created called arn.txt inside ./data/)");
-                System.out.println("");
-                return taskList;
+            createParentDirectory();
+            if (Files.notExists(filePath)) {
+                Files.createFile(filePath);
+                return tasks;
             }
 
-            br = new BufferedReader(new FileReader(file));
-            String line = br.readLine();
-            while (line != null) {
-                Task task = parseTask(line);
-                if (task != null) {
-                    taskList.add(task);
-                } else {
-                    System.out.println("Skipped a corrupted line");
+            try (BufferedReader reader = Files.newBufferedReader(filePath, StandardCharsets.UTF_8)) {
+                String line;
+                int lineNumber = 0;
+                while ((line = reader.readLine()) != null) {
+                    lineNumber++;
+                    if (line.isBlank() || line.equals(DATA_HEADER)) {
+                        continue;
+                    }
+
+                    Task task = parseTask(line);
+                    if (task == null) {
+                        LOGGER.warning("Skipped malformed task data at line " + lineNumber);
+                    } else {
+                        tasks.add(task);
+                    }
                 }
-                line = br.readLine();
             }
+            return tasks;
         } catch (IOException e) {
-            System.out.println("Error in reading saved tasks: " + e.getMessage());
-        } finally {
-            if (br != null) {
-                try {
-                    br.close();
-                } catch (IOException e) {
-                    System.out.println("Error closing file: " + e.getMessage());
-                }
-            }
+            LOGGER.log(Level.WARNING, "Unable to read task data from " + filePath, e);
+            throw new StorageException("Could not read saved tasks.", e);
         }
-
-        return taskList;
     }
 
-
     /**
-     * Parses the given line to convert into task
+     * Writes tasks to a temporary file before replacing the active save file.
      *
-     * @param line the line to be parsed
+     * @param tasks tasks to persist
+     * @throws StorageException if the data cannot be written safely
      */
-    public Task parseTask(String line) {
-        assert line != null : "line in file must not be null";
-        if (line.isBlank()) {
+    public void writeTasks(List<Task> tasks) throws StorageException {
+        Objects.requireNonNull(tasks, "tasks");
+        Path temporaryFile = null;
+        try {
+            createParentDirectory();
+            Path parentDirectory = filePath.getParent();
+            temporaryFile = Files.createTempFile(parentDirectory, "arn-", ".tmp");
+
+            try (BufferedWriter writer = Files.newBufferedWriter(temporaryFile, StandardCharsets.UTF_8)) {
+                writer.write(DATA_HEADER);
+                writer.newLine();
+                for (Task task : tasks) {
+                    writer.write(serializeTask(task));
+                    writer.newLine();
+                }
+            }
+
+            replaceSaveFile(temporaryFile);
+            temporaryFile = null;
+        } catch (IOException e) {
+            LOGGER.log(Level.WARNING, "Unable to write task data to " + filePath, e);
+            throw new StorageException("Could not save tasks.", e);
+        } finally {
+            deleteTemporaryFile(temporaryFile);
+        }
+    }
+
+    private Task parseTask(String line) {
+        if (line == null || line.isBlank()) {
             return null;
         }
 
@@ -96,29 +122,50 @@ public class TaskFileHandler {
         }
 
         try {
-            Task task;
-            if (taskType.equals("T") && parts.length >= 3) {
-                task = new Todo(joinParts(parts, 2, parts.length));
-            } else if (taskType.equals("D") && parts.length >= 4) {
-                task = new Deadline(joinParts(parts, 2, parts.length - 1),
-                        parts[parts.length - 1].trim());
-            } else if (taskType.equals("E") && parts.length >= 5) {
-                task = new Event(joinParts(parts, 2, parts.length - 2),
-                        parts[parts.length - 2].trim(), parts[parts.length - 1].trim());
-            } else {
-                return null;
-            }
-
-            if (task.description.isEmpty()) {
+            Task task = createTask(taskType, parts);
+            if (task == null || task.getDescription().isEmpty()) {
                 return null;
             }
             if (status.equals("1")) {
                 task.markAsDone();
             }
             return task;
-        } catch (ArnException | RuntimeException e) {
+        } catch (ArnException e) {
             return null;
         }
+    }
+
+    private Task createTask(String taskType, String[] parts) throws ArnException {
+        if (taskType.equals("T") && parts.length >= 3) {
+            return new Todo(joinParts(parts, 2, parts.length));
+        }
+        if (taskType.equals("D") && parts.length >= 4) {
+            return new Deadline(joinParts(parts, 2, parts.length - 1),
+                    parts[parts.length - 1].trim());
+        }
+        if (taskType.equals("E") && parts.length >= 5) {
+            return new Event(joinParts(parts, 2, parts.length - 2),
+                    parts[parts.length - 2].trim(), parts[parts.length - 1].trim());
+        }
+        return null;
+    }
+
+    private String serializeTask(Task task) throws StorageException {
+        Objects.requireNonNull(task, "task");
+        String status = task.isDone() ? "1" : "0";
+        if (task instanceof Todo) {
+            return "T | " + status + " | " + task.getDescription();
+        }
+        if (task instanceof Deadline deadline) {
+            return "D | " + status + " | " + deadline.getDescription()
+                    + " | " + deadline.formatDate(false);
+        }
+        if (task instanceof Event event) {
+            return "E | " + status + " | " + event.getDescription()
+                    + " | " + event.formatStartDate(false)
+                    + " | " + event.formatEndDate(false);
+        }
+        throw new StorageException("Unsupported task type: " + task.getClass().getSimpleName());
     }
 
     private String joinParts(String[] parts, int start, int end) {
@@ -132,38 +179,30 @@ public class TaskFileHandler {
         return result.toString().trim();
     }
 
-
-    /**
-     * Writes the given tasks to the data file.
-     *
-     * @param taskList the tasks to be saved
-     */
-    public void writeTasks(ArrayList<Task> taskList) {
-        assert taskList != null : "task list must not be null";
-        File file = new File(filePath);
-        if (!file.exists()) {
-            file.getParentFile().mkdirs();
+    private void createParentDirectory() throws IOException {
+        Path parentDirectory = filePath.getParent();
+        if (parentDirectory != null) {
+            Files.createDirectories(parentDirectory);
         }
+    }
 
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
-            for (Task task: taskList) {
-                String line = "";
-                if (task instanceof Todo) {
-                    line = "T | " + (task.isDone ? "1" : "0") + " | " + task.description;
-                } else if (task instanceof Deadline) {
-                    Deadline d = (Deadline) task;
-                    line = "D | " + (task.isDone ? "1" : "0") + " | " + d.description + " | " + d.formatDate(false);
-                } else if (task instanceof Event) {
-                    Event e = (Event) task;
-                    line = "E | " + (task.isDone ? "1" : "0") + " | " + e.description + " | "
-                            + e.formatStartDate(false) + " | " + e.formatEndDate(false);
-                }
+    private void replaceSaveFile(Path temporaryFile) throws IOException {
+        try {
+            Files.move(temporaryFile, filePath,
+                    StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        } catch (AtomicMoveNotSupportedException e) {
+            Files.move(temporaryFile, filePath, StandardCopyOption.REPLACE_EXISTING);
+        }
+    }
 
-                bw.write(line);
-                bw.newLine();
-            }
+    private void deleteTemporaryFile(Path temporaryFile) {
+        if (temporaryFile == null) {
+            return;
+        }
+        try {
+            Files.deleteIfExists(temporaryFile);
         } catch (IOException e) {
-            System.out.println("Error in writing tasks: " + e.getMessage());
+            LOGGER.log(Level.FINE, "Unable to remove temporary task file " + temporaryFile, e);
         }
     }
 }

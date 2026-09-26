@@ -1,8 +1,10 @@
 package arn;
+
 import java.util.ArrayList;
+import java.util.List;
 
 public class Gui extends Ui {
-    protected  ArrayList<String> responses;
+    private final List<String> responses;
 
     public Gui() {
         super();
@@ -20,15 +22,12 @@ public class Gui extends Ui {
     }
 
     public String getResponses() {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < responses.size(); i++) {
-            sb.append(responses.get(i));
-            if (i < responses.size() - 1) {
-                sb.append("\n");
-            }
-        }
-        String result =  sb.toString();
-        responses.clear();
+        String result = String.join("\n", responses);
+        clearResponses();
         return result;
+    }
+
+    public void clearResponses() {
+        responses.clear();
     }
 }
