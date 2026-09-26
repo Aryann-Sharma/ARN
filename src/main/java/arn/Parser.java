@@ -43,6 +43,10 @@ public class Parser {
     }
 
     public void list() {
+        if (taskList.size() == 0) {
+            ui.displayMsg("Your task list is empty. Add a todo, deadline, or event to get started.");
+            return;
+        }
         int index = 1;
         for (Task task : taskList.get()) {
             if (task == null) {
