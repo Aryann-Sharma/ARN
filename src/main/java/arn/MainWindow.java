@@ -31,6 +31,10 @@ public class MainWindow extends AnchorPane {
     Button sortButton;
     @FXML
     Button examplesButton;
+    @FXML
+    Button todayButton;
+    @FXML
+    Button upcomingButton;
 
     private Arn arn;
     private boolean exiting;
@@ -70,6 +74,16 @@ public class MainWindow extends AnchorPane {
     }
 
     @FXML
+    private void handleToday() {
+        submitCommand("today", false);
+    }
+
+    @FXML
+    private void handleUpcoming() {
+        submitCommand("upcoming", false);
+    }
+
+    @FXML
     private void handleShowExamples() {
         if (exiting) {
             return;
@@ -86,7 +100,10 @@ public class MainWindow extends AnchorPane {
                         + "reschedule 3 /from 2026-10-05  •  reschedule 3 /to 2026-10-06\n"
                         + "For events, omitted endpoints stay unchanged; dates without times keep existing times.\n"
                         + "undo (last saved change in this session)\n"
-                        + "find report  •  list  •  sort", arnImage));
+                        + "find report  •  list  •  sort\n"
+                        + "today (overdue deadlines and today's schedule)\n"
+                        + "upcoming (next 7 calendar days, starting tomorrow)\n"
+                        + "These date views show incomplete tasks and keep the numbers from list.", arnImage));
         userInput.requestFocus();
     }
 
@@ -129,6 +146,8 @@ public class MainWindow extends AnchorPane {
         listButton.setDisable(true);
         sortButton.setDisable(true);
         examplesButton.setDisable(true);
+        todayButton.setDisable(true);
+        upcomingButton.setDisable(true);
 
         Window window = userInput.getScene() == null ? null : userInput.getScene().getWindow();
         PauseTransition pause = new PauseTransition(Duration.seconds(3));

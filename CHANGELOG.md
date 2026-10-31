@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Add `today` for incomplete overdue deadlines and today's deadlines and events, plus `upcoming` for the next seven calendar days starting tomorrow.
+- Include multi-day events when their dates overlap a view, preserve saved task numbers, and leave storage and undo history unchanged.
+- Add Today and Upcoming quick actions, with wrapping at narrow window widths and preservation of unfinished input.
+- Document calendar-day boundaries and add coverage for midnight, time zones, leap days, completed tasks, and packaged desktop and console behavior.
+
 ## 0.4.0 — 2026-09-27
 
 - Make the header and message logos larger, using a blue robot on a light tile for stronger contrast.

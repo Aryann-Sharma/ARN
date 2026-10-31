@@ -62,6 +62,10 @@ public final class Event extends Task {
         return endDate.format(pretty);
     }
 
+    public LocalDateTime getEndDate() {
+        return endDate.getValue();
+    }
+
     @Override
     public LocalDateTime getDate() {
         return startDate.getValue();

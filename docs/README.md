@@ -18,7 +18,11 @@ Type in the input field and press **Enter** or select **Send**. The quick action
 
 - **Show tasks** runs `list`.
 - **By date** runs `sort`.
+- **Today** runs `today`.
+- **Upcoming** runs `upcoming`.
 - **Examples** shows sample commands.
+
+The Today and Upcoming views are available in the source build; the v0.4.0 release does not include them yet. Quick actions wrap onto another row in a narrow window.
 
 The header shows how many tasks are saved. Quick actions preserve your unfinished input. If a command fails, its text stays in the input field so you can correct or retry it. Empty input does not change the task count. New responses, including wrapped error messages, scroll into view automatically. Resizing the window while reading older messages does not force you to the bottom.
 
@@ -173,6 +177,28 @@ To add times to a date-only event, supply times for both endpoints in one comman
 The event time-retention rule does not change deadline rescheduling: `/by` replaces the complete due date, so a date without a time makes the deadline date-only. Todos cannot be rescheduled because they have no date.
 
 An invalid edit or reschedule leaves the task unchanged. Entering the existing description or dates does not save again or add an undo entry.
+
+## Today and upcoming
+
+Use `today` to see two groups of incomplete tasks:
+
+- **Overdue deadlines:** deadlines dated before today, oldest first.
+- **Due or scheduled today:** deadlines due today and events whose start-to-end date range includes today, ordered by due date or event start.
+
+Use `upcoming` to see incomplete deadlines and events for the next seven calendar days, starting tomorrow. The response prints the exact date range. For example, on November 1, it covers November 2 through November 8, including both dates.
+
+```text
+today
+upcoming
+```
+
+Both commands take no arguments. They calculate today's date each time you run them, using the app's local time zone. An open response does not refresh automatically at midnight; run the command or select its quick action again.
+
+These are calendar-day views. A timed deadline earlier today remains in today's group and becomes overdue the next day. An event includes both its start and end dates, even if it ends at `0000`. An event spanning today and tomorrow can appear in both views. Past events are not shown as overdue deadlines.
+
+Completed tasks and undated todos are excluded. Use `list` to see everything or `sort` to see all dated tasks, including completed ones. Ties keep the saved list order. Numbers always come from `list`, so a result labelled `5.` can be completed with `mark 5`; the views do not renumber or reorder saved tasks.
+
+Viewing dates does not change the save file or undo history. Editing, rescheduling, marking, unmarking, or undoing a change is reflected the next time you open a view. The new views do not add reminders or background notifications.
 
 ## Undo changes
 

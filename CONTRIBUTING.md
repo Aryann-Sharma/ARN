@@ -52,6 +52,8 @@ Event rescheduling treats a missing marker as an unchanged endpoint and a date-o
 
 CI runs checks on Windows, Linux, and Intel macOS. Linux uses Xvfb. Test reports, coverage, and GUI screenshots are uploaded as build artifacts, and the Linux job uploads the runnable JAR.
 
+For `today` and `upcoming`, use the parser's clock constructor in tests so dates do not depend on the test machine. Check midnight and time-zone changes, the seven-day boundaries, event overlaps, completed tasks, and original task numbers. These views must not save or add undo entries. Check the quick actions at both normal and minimum window widths when changing their layout.
+
 ## Before opening a pull request
 
 - Run `./gradlew clean check shadowJar --warning-mode fail`.

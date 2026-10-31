@@ -43,7 +43,7 @@ public class UndoTest {
     public void queriesErrorsAndUnchangedCommandsDoNotConsumeUndo(@TempDir Path directory) throws Exception {
         Arn arn = open(directory.resolve("arn.txt"));
         arn.getResponse("deadline Report /by 2026-10-02");
-        for (String command : List.of("list", "sort", "find Report", "unmark 1", "edit 1 Report",
+        for (String command : List.of("list", "sort", "today", "upcoming", "find Report", "unmark 1", "edit 1 Report",
                 "reschedule 1 /by 2026-10-02", "edit 1", "reschedule 1 /by invalid", "undo extra")) {
             arn.getResponse(command);
         }

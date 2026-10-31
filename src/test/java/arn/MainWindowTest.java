@@ -203,9 +203,17 @@ public class MainWindowTest {
             assertEquals(draft, controller.userInput.getText());
             assertEquals(5, controller.dialogContainer.getChildren().size());
 
+            for (String id : java.util.List.of("todayButton", "upcomingButton")) {
+                ((Button) window.root.lookup("#" + id)).fire();
+                assertEquals(draft, controller.userInput.getText());
+                DialogBox response = (DialogBox) controller.dialogContainer.getChildren()
+                        .get(controller.dialogContainer.getChildren().size() - 1);
+                assertTrue(response.dialog.getText().startsWith(id.equals("todayButton") ? "Today (" : "Upcoming ("));
+            }
+
             ((Button) window.root.lookup("#examplesButton")).fire();
             assertEquals(draft, controller.userInput.getText());
-            assertEquals(6, controller.dialogContainer.getChildren().size());
+            assertEquals(10, controller.dialogContainer.getChildren().size());
             assertEquals("0 tasks saved locally", controller.taskCountLabel.getText());
             return null;
         });
@@ -369,11 +377,15 @@ public class MainWindowTest {
                 assertTrue(controller.listButton.isDisabled());
                 assertTrue(controller.sortButton.isDisabled());
                 assertTrue(controller.examplesButton.isDisabled());
+                assertTrue(controller.todayButton.isDisabled());
+                assertTrue(controller.upcomingButton.isDisabled());
 
                 controller.userInput.setText("todo Too late");
                 controller.userInput.fireEvent(new javafx.event.ActionEvent());
                 controller.listButton.fire();
                 controller.examplesButton.fire();
+                controller.todayButton.fire();
+                controller.upcomingButton.fire();
                 assertEquals(5, controller.dialogContainer.getChildren().size());
                 assertEquals("0 tasks saved locally", controller.taskCountLabel.getText());
                 return null;

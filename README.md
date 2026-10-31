@@ -26,6 +26,8 @@ java -jar Arn.jar --cli
 | Add a deadline | `deadline Submit report /by 2026-10-20 1800` |
 | Add an event | `event Team lunch /from 2026-10-20 1200 /to 2026-10-20 1330` |
 | List tasks | `list` |
+| Show overdue deadlines and today's schedule | `today` |
+| Show the next seven days | `upcoming` |
 | Mark or unmark a task | `mark 1`, `unmark 1` |
 | Edit a description | `edit 1 Read chapter two` |
 | Reschedule a task | `reschedule 2 /by 2026-10-21 1800` |
@@ -35,11 +37,14 @@ java -jar Arn.jar --cli
 
 Commands are lowercase. Dates use `YYYY-MM-DD` or `YYYY-MM-DD HHMM`, with 24-hour time. Searches ignore case. The [user guide](https://github.com/Aryann-Sharma/ARN/blob/master/docs/README.md) has the full command syntax, partial rescheduling examples and recovery instructions.
 
+`today` and `upcoming` are new source-build features and are not included in v0.4.0. They show incomplete dated tasks using your computer's local date, keeping the task numbers from `list`. `today` separates overdue deadlines from today's deadlines and events. `upcoming` covers tomorrow through seven days from today, inclusive. Multi-day events appear when any of their dates overlap the view. The desktop has matching quick actions that preserve unfinished input.
+
 ## Main features
 
 - JavaFX GUI and console interfaces over the same task model.
 - Todos, deadlines and events, with date validation, editing and rescheduling.
 - Search and chronological views that preserve the task numbers used by commands.
+- Today and upcoming views for incomplete deadlines and events, including multi-day events.
 - Multi-step undo for successful changes in the current session.
 - Local persistence with checks for failed or conflicting saves.
 

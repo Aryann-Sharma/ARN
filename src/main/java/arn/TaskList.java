@@ -1,5 +1,6 @@
 package arn;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -120,5 +121,40 @@ public final class TaskList {
 
     public int size() {
         return taskList.size();
+    }
+
+    /** Returns unfinished deadlines due before the given calendar date. */
+    public List<Task> overdueDeadlines(LocalDate today) {
+        Objects.requireNonNull(today, "Today's date is required.");
+        List<Task> matches = new ArrayList<>();
+        for (Task task : taskList) {
+            if (!task.isDone() && task instanceof Deadline && task.getDate().toLocalDate().isBefore(today)) {
+                matches.add(task);
+            }
+        }
+        matches.sort(new DateComparator());
+        return matches;
+    }
+
+    /** Returns unfinished deadlines and events overlapping an inclusive range of calendar dates. */
+    public List<Task> tasksBetween(LocalDate firstDay, LocalDate lastDay) {
+        Objects.requireNonNull(firstDay, "Start date is required.");
+        Objects.requireNonNull(lastDay, "End date is required.");
+        if (lastDay.isBefore(firstDay)) {
+            throw new IllegalArgumentException("End date must not be before start date.");
+        }
+        List<Task> matches = new ArrayList<>();
+        for (Task task : taskList) {
+            if (task.isDone() || task.getDate() == null) {
+                continue;
+            }
+            LocalDate start = task.getDate().toLocalDate();
+            LocalDate end = task instanceof Event event ? event.getEndDate().toLocalDate() : start;
+            if (!start.isAfter(lastDay) && !end.isBefore(firstDay)) {
+                matches.add(task);
+            }
+        }
+        matches.sort(new DateComparator());
+        return matches;
     }
 }
