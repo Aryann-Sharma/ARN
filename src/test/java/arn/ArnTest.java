@@ -68,7 +68,7 @@ public class ArnTest {
         Files.delete(saveFile);
         Files.createDirectory(saveFile);
 
-        for (String command : List.of("list", "find book", "sort", "bye", "mark 1", "unmark 2",
+        for (String command : List.of("list", "find book", "sort", "today", "upcoming", "bye", "mark 1", "unmark 2",
                 "edit 1 Read a book", "reschedule 2 /by 2026-10-03")) {
             assertFalse(arn.getResponse(command).startsWith("Error:"), command);
         }

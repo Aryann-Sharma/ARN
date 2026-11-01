@@ -62,6 +62,16 @@ public final class PackagedGuiProbe {
                 require(!stage.getIcons().isEmpty()
                                 && stage.getIcons().stream().noneMatch(image -> image.isError()),
                         "Window icons did not load from the packaged app");
+                input.setText("deadline Draft /by ");
+                for (String id : new String[] {"todayButton", "upcomingButton"}) {
+                    ((Button) stage.getScene().lookup("#" + id)).fire();
+                    require("deadline Draft /by ".equals(input.getText()), "Date view cleared unfinished input");
+                    VBox dialogs = (VBox) stage.getScene().lookup("#dialogContainer");
+                    DialogBox reply = (DialogBox) dialogs.getChildren().get(dialogs.getChildren().size() - 1);
+                    require(reply.dialog.getText().startsWith(id.equals("todayButton") ? "Today (" : "Upcoming ("),
+                            "Date view button did not run its command");
+                }
+                require(!Files.exists(Path.of("data/arn.txt")), "Viewing dates created a save file");
                 input.setText("todo Review the desktop release");
                 send.fire();
                 require("1 task saved locally".equals(count.getText()), "Task count was not updated");
@@ -104,6 +114,15 @@ public final class PackagedGuiProbe {
                                 && subtitleBounds.getMaxX() <= countBounds.getMinX()
                                 && countBounds.getMaxX() <= stage.getScene().getWidth(),
                         "The larger logo crowds the header text");
+                Node actions = stage.getScene().lookup(".quick-actions");
+                Bounds actionBounds = actions.localToScene(actions.getLayoutBounds());
+                for (String id : new String[] {"listButton", "sortButton", "todayButton",
+                        "upcomingButton", "examplesButton"}) {
+                    Node button = stage.getScene().lookup("#" + id);
+                    Bounds bounds = button.localToScene(button.getLayoutBounds());
+                    require(actionBounds.contains(bounds) && bounds.getMaxX() <= stage.getScene().getWidth(),
+                            "Quick action is clipped: " + id);
+                }
                 VBox conversation = (VBox) stage.getScene().lookup("#dialogContainer");
                 Node response = conversation.getChildren().get(conversation.getChildren().size() - 1);
                 Node viewport = stage.getScene().lookup(".conversation-scroll .viewport");
@@ -153,7 +172,7 @@ public final class PackagedGuiProbe {
             send.fire();
             require(stage.isShowing(), "The farewell should be visible before closing");
             require(input.isDisabled() && send.isDisabled(), "Command input must be disabled while exiting");
-            for (String id : new String[] {"listButton", "sortButton", "examplesButton"}) {
+            for (String id : new String[] {"listButton", "sortButton", "examplesButton", "todayButton", "upcomingButton"}) {
                 require(stage.getScene().lookup("#" + id).isDisabled(), "Quick actions must be disabled while exiting");
             }
             VBox conversation = (VBox) stage.getScene().lookup("#dialogContainer");

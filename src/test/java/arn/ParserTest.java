@@ -234,7 +234,7 @@ public class ParserTest {
         ArnException unknown = assertThrows(ArnException.class, () -> parser.parse("todoctor visit"));
         assertTrue(unknown.getMessage().startsWith("Unknown command 'todoctor'. Available commands:"));
 
-        for (String command : List.of("list", "sort", "bye")) {
+        for (String command : List.of("list", "sort", "today", "upcoming", "bye")) {
             ArnException extra = assertThrows(ArnException.class, () -> parser.parse(command + " now"));
             assertEquals("'" + command + "' does not take extra text. Enter just '" + command + "'.",
                     extra.getMessage());

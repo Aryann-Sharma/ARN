@@ -1,7 +1,10 @@
 package arn;
 
+import java.time.Clock;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -12,7 +15,7 @@ import java.util.regex.Pattern;
 public final class Parser {
     private static final List<String> COMMANDS = List.of(
             "todo", "deadline", "event", "list", "mark", "unmark", "delete", "edit", "reschedule",
-            "undo", "find", "sort", "bye");
+            "undo", "find", "sort", "today", "upcoming", "bye");
     private static final String DEADLINE_EXAMPLE = "deadline Submit report /by 2026-10-02 1800";
     private static final String EVENT_EXAMPLE = "event Meeting /from 2026-10-02 1400 /to 2026-10-02 1500";
     private static final String RESCHEDULE_DEADLINE_EXAMPLE = "reschedule 1 /by 2026-10-05 1800";
@@ -24,13 +27,19 @@ public final class Parser {
 
     private final TaskList taskList;
     private final Ui ui;
+    private final Clock clock;
 
     public Parser(TaskList taskList, Ui ui) {
+        this(taskList, ui, Clock.systemDefaultZone());
+    }
+
+    Parser(TaskList taskList, Ui ui, Clock clock) {
         if (taskList == null || ui == null) {
             throw new IllegalArgumentException("Task list and UI are required.");
         }
         this.taskList = taskList;
         this.ui = ui;
+        this.clock = Objects.requireNonNull(clock, "Clock is required.");
     }
 
     public void parse(String input) throws ArnException {
@@ -43,7 +52,8 @@ public final class Parser {
 
         String command = input.strip();
         String commandName = command.split("\\p{javaWhitespace}+", 2)[0];
-        if (List.of("list", "sort", "bye", "undo").contains(commandName) && !command.equals(commandName)) {
+        if (List.of("list", "sort", "today", "upcoming", "bye", "undo").contains(commandName)
+                && !command.equals(commandName)) {
             throw new ArnException("'" + commandName + "' does not take extra text. Enter just '"
                     + commandName + "'.");
         }
@@ -73,6 +83,10 @@ public final class Parser {
             find(command);
         } else if (command.equals("sort")) {
             sortByDate();
+        } else if (command.equals("today")) {
+            showToday();
+        } else if (command.equals("upcoming")) {
+            showUpcoming();
         } else {
             String lowercaseName = commandName.toLowerCase(Locale.ROOT);
             if (COMMANDS.contains(lowercaseName)) {
@@ -298,6 +312,35 @@ public final class Parser {
         return input.equals(command) || (input.startsWith(command)
                 && input.length() > command.length()
                 && Character.isWhitespace(input.charAt(command.length())));
+    }
+
+    private void showToday() {
+        LocalDate today = LocalDate.now(clock);
+        ui.displayMsg("Today (" + today + "):");
+        ui.displayMsg("Overdue deadlines:");
+        displayDatedTasks(taskList.overdueDeadlines(today), "No overdue deadlines.");
+        ui.displayMsg("Due or scheduled today:");
+        displayDatedTasks(taskList.tasksBetween(today, today), "No incomplete deadlines or events today.");
+    }
+
+    private void showUpcoming() {
+        LocalDate today = LocalDate.now(clock);
+        LocalDate firstDay = today.plusDays(1);
+        LocalDate lastDay = today.plusDays(7);
+        ui.displayMsg("Upcoming (" + firstDay + " to " + lastDay + "):");
+        displayDatedTasks(taskList.tasksBetween(firstDay, lastDay),
+                "No incomplete deadlines or events in the next 7 days.");
+    }
+
+    private void displayDatedTasks(List<Task> matches, String emptyMessage) {
+        if (matches.isEmpty()) {
+            ui.displayMsg(emptyMessage);
+            return;
+        }
+        List<Task> savedTasks = taskList.getTasks();
+        for (Task task : matches) {
+            ui.displayMsg((savedTasks.indexOf(task) + 1) + ". " + task);
+        }
     }
 
     private int findClause(String input, Pattern clause, int start) {

@@ -150,6 +150,31 @@ public class PackagedApplicationTest {
         assertFalse(Files.exists(directory.resolve("data")));
     }
 
+    @Test
+    public void packagedDateViewsLeaveSavedTasksAndUndoIntact(@TempDir Path directory) throws Exception {
+        Result empty = run(directory, "today\nupcoming\n", "--cli");
+        assertEquals(0, empty.exitCode(), empty.output());
+        assertTrue(empty.output().contains("No incomplete deadlines or events today."));
+        assertTrue(empty.output().contains("No incomplete deadlines or events in the next 7 days."));
+        assertFalse(Files.exists(directory.resolve("data/arn.txt")));
+
+        Result created = run(directory, "deadline Old report /by 2000-01-01\n", "--cli");
+        assertEquals(0, created.exitCode(), created.output());
+        String saved = Files.readString(directory.resolve("data/arn.txt"));
+        Result viewed = run(directory, "today\nupcoming\nundo\n", "--cli");
+        assertEquals(0, viewed.exitCode(), viewed.output());
+        assertTrue(viewed.output().contains("1. [D][ ] Old report"));
+        assertTrue(viewed.output().contains("Error: Nothing to undo."));
+        assertEquals(saved, Files.readString(directory.resolve("data/arn.txt")));
+
+        Result changed = run(directory, "mark 1\ntoday\nupcoming\nundo\nlist\n", "--cli");
+        assertEquals(0, changed.exitCode(), changed.output());
+        assertFalse(changed.output().contains("Error:"), changed.output());
+        assertTrue(changed.output().contains("No overdue deadlines."));
+        assertTrue(changed.output().contains("1. [D][ ] Old report"));
+        assertEquals(saved, Files.readString(directory.resolve("data/arn.txt")));
+    }
+
     private Result run(Path directory, String input, String... arguments) throws Exception {
         String executable = System.getProperty("os.name").startsWith("Windows") ? "java.exe" : "java";
         List<String> command = new ArrayList<>(List.of(
