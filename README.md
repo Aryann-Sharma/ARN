@@ -2,6 +2,8 @@
 
 Arn is a Java desktop task manager for todos, deadlines and events. I built it with Java 17 and JavaFX, with a command interface and local file storage. It works offline and does not need an account.
 
+Arn began as an individual academic project for NUS CS2103/T, based on the course-provided project template. I have since continued developing it as a personal project, adding features and improving its reliability and interface.
+
 ![Arn desktop interface](https://raw.githubusercontent.com/Aryann-Sharma/ARN/master/docs/Ui.png)
 
 ## Using Arn
